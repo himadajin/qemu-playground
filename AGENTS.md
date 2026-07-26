@@ -1,6 +1,7 @@
 # AGENTS.md
 
-ブラウザから C またはアセンブリのプログラムを入力し、ボタンを押すだけでコンパイルと QEMU 実行を行い、
+ブラウザから C またはアセンブリのプログラムを入力し、ターゲットアーキテクチャ(まず RV64 / AArch64)を選んで
+ボタンを押すだけでコンパイルと QEMU user-mode 実行を行い、
 stdout、stderr、終了コード、コンパイル結果、必要に応じて生成アセンブリを確認できる Web playground を開発する。
 
 ## Single Source of Truth
@@ -19,7 +20,7 @@ docs/
 └── internal/        # 開発者向けドキュメント
     ├── plans/       # 実装計画。連番ディレクトリ(001-prototype/ など)ごとに計画を置く
     ├── specs/       # 確定した仕様(挙動・設定スキーマなど)
-    └── contracts/   # コンポーネント間の境界仕様(zsh↔Rust CLI プロトコルなど)
+    └── contracts/   # コンポーネント間の境界仕様(Web↔API の /run プロトコルなど)
 ```
 
 - `plans/` は作業単位のドキュメントを配置する。必要に応じて内容をspecs, contracts に昇格させる。

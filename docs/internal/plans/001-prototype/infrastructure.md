@@ -1,4 +1,4 @@
-# RISC-V Web Playground Infrastructure
+# QEMU Playground Infrastructure
 
 ## Purpose
 
@@ -22,7 +22,7 @@ playground を許可された少人数へ安全に配信し、運用し続けら
 フロントエンドと API は Cloudflare Access で保護し、許可した少人数のみがアクセスできるようにする。
 認証は Cloudflare Access(One-time PIN または ID プロバイダ連携)に任せ、Access のアプリはこのホスト名 1 つに対して定義する。
 
-API サーバーのコンテナは Node.js `24.16.0` 系の公式イメージをベースにする。
+API サーバーのコンテナは Node.js `24.18.0` 系の公式イメージをベースにする。
 runner イメージの中身(ツールチェーン構成)は `execution.md` が扱う。
 
 ## Direction
