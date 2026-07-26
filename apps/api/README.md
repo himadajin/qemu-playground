@@ -29,6 +29,18 @@ npm run typecheck --workspace @qemu-playground/api
 npm run test      --workspace @qemu-playground/api  # 統合テストは実 Docker を使う
 ```
 
+`test/integration.test.ts` は実 runner コンテナ(linux/arm64 の
+`qemu-playground-runner:dev`)を起動する。x86_64 の CI などこのイメージが動かせない
+環境では、環境変数 `API_SKIP_INTEGRATION_TESTS=1` を立てるとこのファイルだけ除外される
+(`vitest.config.ts` 参照)。他のテストファイルはスタブ runner を使うため Docker 不要。
+
+## コンテナ化
+
+本番運用は Docker Compose による自己ホストを前提にする。
+`apps/api/Dockerfile` はモノレポの npm workspaces 構成を前提にしており、
+ビルドコンテキストはリポジトリルート(`compose.yaml` 参照)。
+手順は [docs/user/self-hosting.md](../../docs/user/self-hosting.md) を参照。
+
 ## エンドポイント
 
 | メソッド | パス            | 内容                                                       |

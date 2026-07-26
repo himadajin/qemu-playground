@@ -17,6 +17,24 @@ API は常に同一オリジンの相対パス `POST /api/run` を呼ぶ。
 (`vite.config.ts`)。本番でこの経路を担うのは Cloudflare 側の設定であり、
 フロントエンドのコードは変わらない。
 
+## デプロイ(Cloudflare Workers)
+
+`dist/` を Workers の static assets として配信し、`/api/*` だけ
+`worker/index.ts` の Worker fetch handler が Cloudflare Tunnel オリジンへ
+素通しする(`wrangler.jsonc` の `assets.run_worker_first`)。パス書き換えや
+ヘッダ変更は行わない。
+
+デプロイ先オリジンは `wrangler.jsonc` の `vars.API_ORIGIN` で設定する
+(プレースホルダ値なので実値に置き換える)。`main` への push で
+`.github/workflows/deploy-web.yml` が自動デプロイする。手動デプロイ・
+ローカル確認・Cloudflare 側の前提作業は
+[docs/user/self-hosting.md](../../docs/user/self-hosting.md) を参照。
+
+```sh
+npx --prefix apps/web wrangler dev      # ローカル確認(認証不要)
+npx --prefix apps/web wrangler deploy   # 要 Cloudflare 認証
+```
+
 ## 共有 URL
 
 コード・言語・ターゲット・コンパイルオプションを URL フラグメント
