@@ -18,6 +18,10 @@ jobs:
 
       - run: npm ci
 
+      - run: npm run lint
+
+      - run: npm run format:check
+
       - run: npm run typecheck
 
       # apps/api's test/integration.test.ts starts real runner containers

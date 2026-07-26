@@ -34,3 +34,8 @@ docs/
 
 コミットメッセージは　Conventional Commits に従うこと。簡潔な英語で書くこと。
 例: `docs: add prototype plan`
+
+## Lint / Format
+
+コミット前に `npm run lint` と `npm run format:check` を通すこと。
+自動修正は `npm run lint:fix` / `npm run format` で行う。

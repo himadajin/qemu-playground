@@ -60,6 +60,7 @@ Node.js のバージョンは `.nvmrc` で管理する(nvm を想定)。
 API サーバーは Node.js `24.18.0` LTS、TypeScript `6.0.3`、Fastify `5.10.0`、Zod `4.4.3` を使う。
 TypeScript 7 系への更新は、エコシステムの安定を見て別途判断する。
 コードエディタは Monaco Editor `0.56.0` を第一候補とし、UI 基盤は Radix Themes `3.3.0` と Radix Colors `3.0.0`、アイコンが必要な UI では lucide-react `1.27.0` を使う。
+静的解析とフォーマットには ESLint `9.39.5`(flat config、typescript-eslint `8.65.0` による型認識あり)と Prettier `3.9.6` を採用する。
 
 ## Related Files
 
