@@ -25,7 +25,11 @@ const TIMEOUT_STATUSES = new Set([124, 137]);
 /** Slack for clock granularity when comparing elapsed time to the limit. */
 const TIMEOUT_ELAPSED_SLACK_MS = 100;
 
-function phaseTimedOut(status: number | undefined, elapsedMs: number | undefined, limitMs: number): boolean {
+function phaseTimedOut(
+  status: number | undefined,
+  elapsedMs: number | undefined,
+  limitMs: number,
+): boolean {
   if (status === undefined || !TIMEOUT_STATUSES.has(status)) return false;
   if (elapsedMs === undefined) return true;
   return elapsedMs >= limitMs - TIMEOUT_ELAPSED_SLACK_MS;
@@ -118,7 +122,11 @@ export function createRunService(config: ApiConfig, runner: Runner): RunService 
       request.language === "c"
         ? (() => {
             const generated = readOutput(files, ASSEMBLY_OUT, maxBytes);
-            return { available: true as const, code: generated.text, truncated: generated.truncated };
+            return {
+              available: true as const,
+              code: generated.text,
+              truncated: generated.truncated,
+            };
           })()
         : { available: false as const };
 

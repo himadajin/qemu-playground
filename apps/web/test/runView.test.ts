@@ -115,10 +115,7 @@ describe("result view mapping", () => {
       assembly: { available: true, code: "x", truncated: false },
     };
 
-    const compileView = deriveResultView(
-      { kind: "result", result: compilePhase },
-      "c",
-    );
+    const compileView = deriveResultView({ kind: "result", result: compilePhase }, "c");
     expect(compileView.badge).toBe("timeout");
     expect(compileView.output.state).toMatch(/compil/i);
     expect(compileView.output.stdout).toBeNull();

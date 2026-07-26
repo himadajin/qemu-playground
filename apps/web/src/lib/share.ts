@@ -4,10 +4,7 @@ import {
   type Language,
   type TargetId,
 } from "@qemu-playground/shared";
-import {
-  compressToEncodedURIComponent,
-  decompressFromEncodedURIComponent,
-} from "lz-string";
+import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
 
 /**
  * Share URLs carry the whole form state in the URL fragment. Nothing is
@@ -111,8 +108,7 @@ export function decodeShareState(payload: string): ShareState | null {
 }
 
 export type ShareUrlResult =
-  | { ok: true; url: string }
-  | { ok: false; reason: "too_long"; length: number; limit: number };
+  { ok: true; url: string } | { ok: false; reason: "too_long"; length: number; limit: number };
 
 /**
  * Builds the share URL for `state`, relative to the page's current location.

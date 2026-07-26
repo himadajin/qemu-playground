@@ -55,9 +55,7 @@ describe("run request construction", () => {
 
   it("refuses empty code and oversized code before any request", () => {
     expect(buildRunRequest({ ...INPUT, code: "   \n" }).ok).toBe(false);
-    expect(
-      buildRunRequest({ ...INPUT, code: "x".repeat(MAX_CODE_LENGTH + 1) }).ok,
-    ).toBe(false);
+    expect(buildRunRequest({ ...INPUT, code: "x".repeat(MAX_CODE_LENGTH + 1) }).ok).toBe(false);
   });
 });
 
@@ -78,23 +76,17 @@ describe("requestRun", () => {
 
   it("keeps error-layer responses out of the result layer", async () => {
     const fetchImpl: FetchLike = async () =>
-      jsonResponse(
-        { error: { code: "capacity_exceeded", message: "too busy" } },
-        429,
-      );
+      jsonResponse({ error: { code: "capacity_exceeded", message: "too busy" } }, 429);
 
     const outcome = await requestRun(INPUT, fetchImpl);
 
     expect(outcome.ok).toBe(false);
-    expect(outcome.ok === false && outcome.message).toContain(
-      "capacity_exceeded",
-    );
+    expect(outcome.ok === false && outcome.message).toContain("capacity_exceeded");
     expect(outcome.ok === false && outcome.message).toContain("too busy");
   });
 
   it("falls back to the HTTP status when the error body is unreadable", async () => {
-    const fetchImpl: FetchLike = async () =>
-      new Response("<html>502</html>", { status: 502 });
+    const fetchImpl: FetchLike = async () => new Response("<html>502</html>", { status: 502 });
 
     const outcome = await requestRun(INPUT, fetchImpl);
     expect(outcome.ok === false && outcome.message).toContain("502");
@@ -110,8 +102,7 @@ describe("requestRun", () => {
   });
 
   it("rejects a 200 body that does not match the result schema", async () => {
-    const fetchImpl: FetchLike = async () =>
-      jsonResponse({ status: "success" });
+    const fetchImpl: FetchLike = async () => jsonResponse({ status: "success" });
 
     const outcome = await requestRun(INPUT, fetchImpl);
     expect(outcome.ok).toBe(false);

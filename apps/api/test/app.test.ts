@@ -144,8 +144,12 @@ describe("runner failures", () => {
       { ...baseConfig, maxConcurrentRuns: 1 },
     );
 
-    expect((await app.inject({ method: "POST", url: "/api/run", payload: validBody })).statusCode).toBe(500);
-    expect((await app.inject({ method: "POST", url: "/api/run", payload: validBody })).statusCode).toBe(200);
+    expect(
+      (await app.inject({ method: "POST", url: "/api/run", payload: validBody })).statusCode,
+    ).toBe(500);
+    expect(
+      (await app.inject({ method: "POST", url: "/api/run", payload: validBody })).statusCode,
+    ).toBe(200);
   });
 });
 

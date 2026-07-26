@@ -230,7 +230,11 @@ describe("schema conformance", () => {
     const outcomes: RunnerOutcome[] = [
       { meta: { finished: true, compileRc: 0, runRc: 0 }, files: new Map(), watchdogFired: false },
       { meta: { finished: true, compileRc: 1 }, files: new Map(), watchdogFired: false },
-      { meta: { finished: true, compileRc: 0, runRc: 139 }, files: new Map(), watchdogFired: false },
+      {
+        meta: { finished: true, compileRc: 0, runRc: 139 },
+        files: new Map(),
+        watchdogFired: false,
+      },
       {
         meta: { finished: true, compileRc: 124, compileMs: config.compileTimeoutMs },
         files: new Map(),

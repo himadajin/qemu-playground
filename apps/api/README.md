@@ -43,10 +43,10 @@ npm run test      --workspace @qemu-playground/api  # 統合テストは実 Dock
 
 ## エンドポイント
 
-| メソッド | パス            | 内容                                                       |
-| -------- | --------------- | ---------------------------------------------------------- |
-| `POST`   | `/api/run`      | 1 回の Run。実行結果は常に HTTP 200(`RunResultSchema`)     |
-| `GET`    | `/api/healthz`  | `{"status":"ok"}`                                           |
+| メソッド | パス           | 内容                                                   |
+| -------- | -------------- | ------------------------------------------------------ |
+| `POST`   | `/api/run`     | 1 回の Run。実行結果は常に HTTP 200(`RunResultSchema`) |
+| `GET`    | `/api/healthz` | `{"status":"ok"}`                                      |
 
 Run 自体を実行できなかった場合だけ HTTP エラーになり、`RunErrorResponseSchema` を返す。
 
@@ -56,19 +56,19 @@ Run 自体を実行できなかった場合だけ HTTP エラーになり、`Run
 
 ## 環境変数
 
-| 変数                  | 既定値                       | 内容                                                     |
-| --------------------- | ---------------------------- | -------------------------------------------------------- |
-| `HOST`                | `0.0.0.0`                    | listen アドレス                                          |
-| `PORT`                | `8080`                       | listen ポート                                            |
-| `RUNNER_IMAGE`        | `qemu-playground-runner:dev` | runner コンテナのイメージ                                |
-| `DOCKER_SOCKET_PATH`  | `/var/run/docker.sock`       | 兄弟コンテナ起動に使う Docker ソケット                   |
-| `MAX_CONCURRENT_RUNS` | `2`                          | 同時実行数の上限                                         |
-| `COMPILE_TIMEOUT_MS`  | `10000`                      | コンパイル段階の時間制限                                 |
-| `RUN_TIMEOUT_MS`      | `5000`                       | 実行段階の時間制限                                       |
-| `WATCHDOG_EXTRA_MS`   | `15000`                      | API 側バックストップの追加猶予(下記参照)               |
-| `RUNNER_CPUS`         | `1`                          | runner コンテナの CPU 割当                               |
-| `RUNNER_MEMORY_MB`    | `256`                        | runner コンテナのメモリ上限                              |
-| `RUNNER_PIDS_LIMIT`   | `64`                         | runner コンテナのプロセス数上限                          |
+| 変数                  | 既定値                       | 内容                                                        |
+| --------------------- | ---------------------------- | ----------------------------------------------------------- |
+| `HOST`                | `0.0.0.0`                    | listen アドレス                                             |
+| `PORT`                | `8080`                       | listen ポート                                               |
+| `RUNNER_IMAGE`        | `qemu-playground-runner:dev` | runner コンテナのイメージ                                   |
+| `DOCKER_SOCKET_PATH`  | `/var/run/docker.sock`       | 兄弟コンテナ起動に使う Docker ソケット                      |
+| `MAX_CONCURRENT_RUNS` | `2`                          | 同時実行数の上限                                            |
+| `COMPILE_TIMEOUT_MS`  | `10000`                      | コンパイル段階の時間制限                                    |
+| `RUN_TIMEOUT_MS`      | `5000`                       | 実行段階の時間制限                                          |
+| `WATCHDOG_EXTRA_MS`   | `15000`                      | API 側バックストップの追加猶予(下記参照)                    |
+| `RUNNER_CPUS`         | `1`                          | runner コンテナの CPU 割当                                  |
+| `RUNNER_MEMORY_MB`    | `256`                        | runner コンテナのメモリ上限                                 |
+| `RUNNER_PIDS_LIMIT`   | `64`                         | runner コンテナのプロセス数上限                             |
 | `MAX_OUTPUT_BYTES`    | `65536`                      | compileLog / stdout / stderr / 生成アセンブリの各サイズ上限 |
 
 ## 実行モデル

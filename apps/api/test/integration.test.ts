@@ -1,4 +1,9 @@
-import { TARGETS, RunErrorResponseSchema, RunResultSchema, type TargetId } from "@qemu-playground/shared";
+import {
+  TARGETS,
+  RunErrorResponseSchema,
+  RunResultSchema,
+  type TargetId,
+} from "@qemu-playground/shared";
 import type { FastifyInstance } from "fastify";
 import type { InjectOptions } from "light-my-request";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";

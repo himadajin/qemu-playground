@@ -54,19 +54,13 @@ describe("share state encoding", () => {
     expect(readShareStateFromHash("")).toBeNull();
     expect(readShareStateFromHash("#other=abc")).toBeNull();
     expect(
-      decodeShareState(
-        encodeShareStateRaw({ v: 1, l: "rust", t: "rv64", c: "x", o: "" }),
-      ),
+      decodeShareState(encodeShareStateRaw({ v: 1, l: "rust", t: "rv64", c: "x", o: "" })),
     ).toBeNull();
     expect(
-      decodeShareState(
-        encodeShareStateRaw({ v: 1, l: "c", t: "mips", c: "x", o: "" }),
-      ),
+      decodeShareState(encodeShareStateRaw({ v: 1, l: "c", t: "mips", c: "x", o: "" })),
     ).toBeNull();
     expect(
-      decodeShareState(
-        encodeShareStateRaw({ v: 99, l: "c", t: "rv64", c: "x", o: "" }),
-      ),
+      decodeShareState(encodeShareStateRaw({ v: 99, l: "c", t: "rv64", c: "x", o: "" })),
     ).toBeNull();
   });
 });
@@ -76,10 +70,7 @@ describe("share URL length limit", () => {
     const state: ShareState = {
       ...STATE,
       // Random-ish text so lz-string cannot compress it away.
-      code: Array.from(
-        { length: 4000 },
-        (_, i) => `volatile int v${i} = ${i * 7919};`,
-      ).join("\n"),
+      code: Array.from({ length: 4000 }, (_, i) => `volatile int v${i} = ${i * 7919};`).join("\n"),
     };
 
     const built = buildShareUrl(BASE_URL, state);

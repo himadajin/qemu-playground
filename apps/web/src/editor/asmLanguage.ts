@@ -10,8 +10,7 @@ import type * as Monaco from "monaco-editor/editor/editor.api";
  */
 export const ASM_LANGUAGE_ID = "asm";
 
-const registers =
-  /\b(?:x[0-9]+|w[0-9]+|[atsx][0-9]+|sp|lr|pc|fp|ra|gp|tp|zero|xzr|wzr)\b/;
+const registers = /\b(?:x[0-9]+|w[0-9]+|[atsx][0-9]+|sp|lr|pc|fp|ra|gp|tp|zero|xzr|wzr)\b/;
 
 export const asmLanguage: Monaco.languages.IMonarchLanguage = {
   defaultToken: "",

@@ -48,9 +48,7 @@ export function CodeEditor({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<MonacoApi | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "failed">(
-    "loading",
-  );
+  const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
 
   // Read through refs inside the one-shot creation effect so that a value or
   // language change does not tear the editor down and rebuild it.

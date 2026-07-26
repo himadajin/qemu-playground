@@ -1,11 +1,5 @@
 import { TARGETS, type Language, type TargetId } from "@qemu-playground/shared";
-import {
-  Button,
-  SegmentedControl,
-  Select,
-  Text,
-  TextField,
-} from "@radix-ui/themes";
+import { Button, SegmentedControl, Select, Text, TextField } from "@radix-ui/themes";
 import { FolderOpen, Play, Save, Share2 } from "lucide-react";
 
 export interface ToolbarNotice {
@@ -86,13 +80,7 @@ export function Toolbar({
         onChange={(event) => onCompileOptionsChange(event.target.value)}
       />
 
-      <Button
-        size="1"
-        onClick={onRun}
-        disabled={running}
-        loading={running}
-        aria-label="Run"
-      >
+      <Button size="1" onClick={onRun} disabled={running} loading={running} aria-label="Run">
         <Play size={14} aria-hidden="true" />
         Run
       </Button>

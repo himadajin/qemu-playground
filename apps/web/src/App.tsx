@@ -8,23 +8,9 @@ import { Toolbar, type ToolbarNotice } from "./components/Toolbar";
 import { useMediaQuery } from "./hooks/useMediaQuery";
 import { requestRun } from "./lib/runApi";
 import { deriveResultView, type RunPhase } from "./lib/runView";
-import {
-  DEFAULT_LANGUAGE,
-  DEFAULT_TARGET,
-  getSample,
-  isUntouchedSample,
-} from "./lib/samples";
-import {
-  buildShareUrl,
-  readShareStateFromHash,
-  type ShareState,
-} from "./lib/share";
-import {
-  deleteSnippet,
-  loadSnippets,
-  saveSnippet,
-  type SavedSnippet,
-} from "./lib/storage";
+import { DEFAULT_LANGUAGE, DEFAULT_TARGET, getSample, isUntouchedSample } from "./lib/samples";
+import { buildShareUrl, readShareStateFromHash, type ShareState } from "./lib/share";
+import { deleteSnippet, loadSnippets, saveSnippet, type SavedSnippet } from "./lib/storage";
 
 const NARROW_QUERY = "(max-width: 900px)";
 const NOTICE_TIMEOUT_MS = 5000;
@@ -67,10 +53,7 @@ export function App() {
 
   const isNarrow = useMediaQuery(NARROW_QUERY);
   const running = phase.kind === "running";
-  const view = useMemo(
-    () => deriveResultView(phase, language),
-    [phase, language],
-  );
+  const view = useMemo(() => deriveResultView(phase, language), [phase, language]);
 
   useEffect(() => {
     setSnippets(loadSnippets(window.localStorage));
@@ -202,21 +185,11 @@ export function App() {
   }, []);
 
   const editor = (
-    <CodeEditor
-      value={code}
-      language={language}
-      ariaLabel="Source code"
-      onChange={setCode}
-    />
+    <CodeEditor value={code} language={language} ariaLabel="Source code" onChange={setCode} />
   );
 
   const result = (
-    <ResultPane
-      view={view}
-      tab={resultTab}
-      onTabChange={setResultTab}
-      language={language}
-    />
+    <ResultPane view={view} tab={resultTab} onTabChange={setResultTab} language={language} />
   );
 
   return (

@@ -11,7 +11,7 @@
     "directory": "./dist",
     // Only /api/* is routed through the Worker script; every other request
     // is served directly from the static assets without invoking the Worker.
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*"],
   },
   "vars": {
     // Origin the Worker proxies /api/* to: the Cloudflare Tunnel hostname in
@@ -20,6 +20,6 @@
     // docs/user/self-hosting.md). Replace with the real Tunnel hostname
     // before deploying, or override per-run with
     // `wrangler deploy --var API_ORIGIN:https://<real-tunnel-hostname>`.
-    "API_ORIGIN": "https://api-origin.example.com"
-  }
+    "API_ORIGIN": "https://api-origin.example.com",
+  },
 }

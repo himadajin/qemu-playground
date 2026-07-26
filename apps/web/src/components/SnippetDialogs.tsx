@@ -1,12 +1,5 @@
 import { getTargetDefinition } from "@qemu-playground/shared";
-import {
-  Button,
-  Dialog,
-  Flex,
-  IconButton,
-  Text,
-  TextField,
-} from "@radix-ui/themes";
+import { Button, Dialog, Flex, IconButton, Text, TextField } from "@radix-ui/themes";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { SavedSnippet } from "../lib/storage";
@@ -21,12 +14,7 @@ interface SaveDialogProps {
 }
 
 /** Save is a name prompt and nothing more; storage stays out of the way. */
-export function SaveDialog({
-  open,
-  onOpenChange,
-  defaultName,
-  onSave,
-}: SaveDialogProps) {
+export function SaveDialog({ open, onOpenChange, defaultName, onSave }: SaveDialogProps) {
   const [name, setName] = useState(defaultName);
 
   useEffect(() => {
@@ -42,8 +30,7 @@ export function SaveDialog({
       <Dialog.Content size="1" maxWidth="380px">
         <Dialog.Title size="3">Save snippet</Dialog.Title>
         <Dialog.Description size="1" color="gray" mb="3">
-          Stored in this browser only. Saving under an existing name replaces
-          it.
+          Stored in this browser only. Saving under an existing name replaces it.
         </Dialog.Description>
         <form
           onSubmit={(event) => {
@@ -85,13 +72,7 @@ interface OpenDialogProps {
 }
 
 /** Open lists the saved snippets on demand; there is no permanent file tree. */
-export function OpenDialog({
-  open,
-  onOpenChange,
-  snippets,
-  onSelect,
-  onDelete,
-}: OpenDialogProps) {
+export function OpenDialog({ open, onOpenChange, snippets, onSelect, onDelete }: OpenDialogProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content size="1" maxWidth="420px">

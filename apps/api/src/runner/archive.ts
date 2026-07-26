@@ -24,7 +24,9 @@ export interface ArchiveFile {
 export function packFiles(files: readonly ArchiveFile[]): Readable {
   const packer = pack();
   for (const file of files) {
-    const contents = Buffer.isBuffer(file.contents) ? file.contents : Buffer.from(file.contents, "utf8");
+    const contents = Buffer.isBuffer(file.contents)
+      ? file.contents
+      : Buffer.from(file.contents, "utf8");
     packer.entry(
       {
         name: file.name,
