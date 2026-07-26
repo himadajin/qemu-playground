@@ -48,7 +48,7 @@ Run のレスポンスは 2 つの独立した層に分かれ、互いに混ざ�
 C 入力時の生成アセンブリは `assembly` フィールドで表す。
 
 - `assembly.available === false`: この Run にはアセンブリが適用されない(入力言語が asm、またはビルドが実行用バイナリを生成する段階に到達しなかった)。
-- `assembly.available === true`: 実行用ビルドが成功した C 入力であることを示す。`code`(生成アセンブリ文字列)と `truncated`(切り捃てフラグ)を持つ。
+- `assembly.available === true`: 実行用ビルドが成功した C 入力であることを示す。`code`(生成アセンブリ文字列)と `truncated`(切り捨てフラグ)を持つ。
   生成アセンブリの取得自体(`-S` 相当の別コンパイル)が失敗した場合でも実行用ビルドが成功していれば Run 全体は失敗として扱わず、`code` を空文字列・`truncated` を `false` とし、失敗の内容は `compileLog` から読めるようにする。
 
 `assembly` は `success` と `runtime_error` では必ず含まれ、実行段階の `timeout` では含まれる場合がある(コンパイルが成功してから実行段階でタイムアウトした場合)。
