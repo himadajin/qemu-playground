@@ -1,0 +1,28 @@
+{
+  "name": "@qemu-playground/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@qemu-playground/shared": "*",
+    "dockerode": "^4.0.9",
+    "fastify": "5.10.0",
+    "tar-stream": "^3.1.7",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.47",
+    "@types/node": "^24.10.1",
+    "@types/tar-stream": "^3.1.4",
+    "tsx": "^4.20.7",
+    "typescript": "6.0.3",
+    "vite": "8.1.5",
+    "vitest": "^4.1.10"
+  }
+}

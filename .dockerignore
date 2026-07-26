@@ -1,0 +1,28 @@
+# Build context for apps/api/Dockerfile (and any future backend images) is
+# the repo root, because the API needs the workspace root (package.json,
+# package-lock.json) and packages/shared as well as its own sources.
+# This file trims that context to what those images actually need.
+
+# Never send VCS/CI metadata or editor state into a build context.
+.git
+.github
+.claude
+.vscode
+
+# apps/web is a separate deployable (Cloudflare Workers static assets) and is
+# not used by any Docker image in this repo.
+apps/web
+
+# Docs are not needed inside images; kept as the single source of truth in git.
+docs
+
+# Build artifacts and caches, wherever they live in the tree.
+**/node_modules
+**/dist
+**/.vite
+**/*.tsbuildinfo
+
+# Local-only files that must never end up in an image.
+.env
+.env.*
+!.env.example

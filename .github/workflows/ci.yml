@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run format:check
+
+      - run: npm run typecheck
+
+      # apps/api's test/integration.test.ts starts real runner containers
+      # from the linux/arm64-only qemu-playground-runner:dev image (see
+      # runner/Dockerfile); GitHub-hosted runners are x86_64 and cannot build
+      # or run it. API_SKIP_INTEGRATION_TESTS=1 makes apps/api's vitest
+      # config exclude that file (apps/api/vitest.config.ts), so this still
+      # runs apps/api's Docker-independent unit tests plus all of
+      # packages/shared and apps/web.
+      - run: npm run test
+        env:
+          API_SKIP_INTEGRATION_TESTS: "1"

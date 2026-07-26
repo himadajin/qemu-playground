@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Name of the Cloudflare Workers project. Adjust to match the target
+  // Cloudflare account, or override with `wrangler deploy --name`.
+  "name": "qemu-playground-web",
+  "compatibility_date": "2026-07-26",
+  "main": "worker/index.ts",
+  "assets": {
+    // Output of `npm run build --workspace @qemu-playground/web` (see
+    // apps/web/README.md).
+    "directory": "./dist",
+    // Only /api/* is routed through the Worker script; every other request
+    // is served directly from the static assets without invoking the Worker.
+    "run_worker_first": ["/api/*"],
+  },
+  "vars": {
+    // Origin the Worker proxies /api/* to: the Cloudflare Tunnel hostname in
+    // front of the self-hosted API (see
+    // docs/internal/plans/001-prototype/infrastructure.md and
+    // docs/user/self-hosting.md). Replace with the real Tunnel hostname
+    // before deploying, or override per-run with
+    // `wrangler deploy --var API_ORIGIN:https://<real-tunnel-hostname>`.
+    "API_ORIGIN": "https://api-origin.example.com",
+  },
+}
