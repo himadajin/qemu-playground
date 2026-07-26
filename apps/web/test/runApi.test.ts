@@ -62,9 +62,9 @@ describe("run request construction", () => {
 describe("requestRun", () => {
   it("posts to the same-origin endpoint and returns the parsed result", async () => {
     const calls: Array<{ url: string; init?: RequestInit }> = [];
-    const fetchImpl: FetchLike = async (url, init) => {
+    const fetchImpl: FetchLike = (url, init) => {
       calls.push({ url, init });
-      return jsonResponse(RESULT);
+      return Promise.resolve(jsonResponse(RESULT));
     };
 
     const outcome = await requestRun(INPUT, fetchImpl);
@@ -75,8 +75,10 @@ describe("requestRun", () => {
   });
 
   it("keeps error-layer responses out of the result layer", async () => {
-    const fetchImpl: FetchLike = async () =>
-      jsonResponse({ error: { code: "capacity_exceeded", message: "too busy" } }, 429);
+    const fetchImpl: FetchLike = () =>
+      Promise.resolve(
+        jsonResponse({ error: { code: "capacity_exceeded", message: "too busy" } }, 429),
+      );
 
     const outcome = await requestRun(INPUT, fetchImpl);
 
@@ -86,23 +88,22 @@ describe("requestRun", () => {
   });
 
   it("falls back to the HTTP status when the error body is unreadable", async () => {
-    const fetchImpl: FetchLike = async () => new Response("<html>502</html>", { status: 502 });
+    const fetchImpl: FetchLike = () =>
+      Promise.resolve(new Response("<html>502</html>", { status: 502 }));
 
     const outcome = await requestRun(INPUT, fetchImpl);
     expect(outcome.ok === false && outcome.message).toContain("502");
   });
 
   it("reports transport failures as a Run that could not be completed", async () => {
-    const fetchImpl: FetchLike = async () => {
-      throw new Error("network down");
-    };
+    const fetchImpl: FetchLike = () => Promise.reject(new Error("network down"));
 
     const outcome = await requestRun(INPUT, fetchImpl);
     expect(outcome.ok === false && outcome.message).toContain("network down");
   });
 
   it("rejects a 200 body that does not match the result schema", async () => {
-    const fetchImpl: FetchLike = async () => jsonResponse({ status: "success" });
+    const fetchImpl: FetchLike = () => Promise.resolve(jsonResponse({ status: "success" }));
 
     const outcome = await requestRun(INPUT, fetchImpl);
     expect(outcome.ok).toBe(false);

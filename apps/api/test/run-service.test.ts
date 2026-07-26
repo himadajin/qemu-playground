@@ -10,14 +10,14 @@ import { signalNameFromStatus } from "../src/signals.js";
  * so the container-independent logic can be checked exactly.
  */
 
-const config: ApiConfig = loadConfig({} as NodeJS.ProcessEnv);
+const config: ApiConfig = loadConfig({});
 
 function stubRunner(outcome: Partial<RunnerOutcome> & { meta: RunnerMeta }) {
   const jobs: RunnerJob[] = [];
   const runner: Runner = {
-    async execute(job) {
+    execute(job) {
       jobs.push(job);
-      return { files: new Map(), watchdogFired: false, ...outcome };
+      return Promise.resolve({ files: new Map(), watchdogFired: false, ...outcome });
     },
   };
   return { runner, jobs };

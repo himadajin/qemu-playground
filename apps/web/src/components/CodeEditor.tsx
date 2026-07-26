@@ -51,9 +51,13 @@ export function CodeEditor({
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
 
   // Read through refs inside the one-shot creation effect so that a value or
-  // language change does not tear the editor down and rebuild it.
+  // language change does not tear the editor down and rebuild it. The sync
+  // runs in an effect (not during render) so only committed renders update
+  // it; nothing reads `latest.current` synchronously during render.
   const latest = useRef({ value, language, readOnly, onChange });
-  latest.current = { value, language, readOnly, onChange };
+  useEffect(() => {
+    latest.current = { value, language, readOnly, onChange };
+  });
 
   useEffect(() => {
     let cancelled = false;

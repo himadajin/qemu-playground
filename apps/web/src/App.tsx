@@ -32,7 +32,7 @@ function initialState(): ShareState {
 }
 
 export function App() {
-  const initial = useMemo(initialState, []);
+  const initial = useMemo(() => initialState(), []);
 
   const [language, setLanguage] = useState<Language>(initial.language);
   const [target, setTarget] = useState<TargetId>(initial.target);
@@ -43,7 +43,7 @@ export function App() {
   const [resultTab, setResultTab] = useState<ResultTab>("output");
   const [mainTab, setMainTab] = useState<"code" | "result">("code");
 
-  const [snippets, setSnippets] = useState<SavedSnippet[]>([]);
+  const [snippets, setSnippets] = useState<SavedSnippet[]>(() => loadSnippets(window.localStorage));
   const [saveOpen, setSaveOpen] = useState(false);
   const [openOpen, setOpenOpen] = useState(false);
   const [snippetName, setSnippetName] = useState("");
@@ -54,10 +54,6 @@ export function App() {
   const isNarrow = useMediaQuery(NARROW_QUERY);
   const running = phase.kind === "running";
   const view = useMemo(() => deriveResultView(phase, language), [phase, language]);
-
-  useEffect(() => {
-    setSnippets(loadSnippets(window.localStorage));
-  }, []);
 
   const showNotice = useCallback((next: ToolbarNotice) => {
     setNotice(next);
@@ -76,12 +72,10 @@ export function App() {
     [],
   );
 
-  // Assembly is meaningless for assembly input, so never leave it selected.
-  useEffect(() => {
-    if (language === "asm" && resultTab === "assembly") {
-      setResultTab("output");
-    }
-  }, [language, resultTab]);
+  // Assembly is meaningless for assembly input, so never display it selected
+  // even if it was selected before switching to an asm input.
+  const displayedResultTab: ResultTab =
+    language === "asm" && resultTab === "assembly" ? "output" : resultTab;
 
   const handleLanguageChange = useCallback(
     (next: Language) => {
@@ -189,7 +183,12 @@ export function App() {
   );
 
   const result = (
-    <ResultPane view={view} tab={resultTab} onTabChange={setResultTab} language={language} />
+    <ResultPane
+      view={view}
+      tab={displayedResultTab}
+      onTabChange={setResultTab}
+      language={language}
+    />
   );
 
   return (

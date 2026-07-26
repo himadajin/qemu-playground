@@ -31,7 +31,7 @@ import {
 
 const targetIds = TARGETS.map((target) => target.id);
 
-const defaults = loadConfig({} as NodeJS.ProcessEnv);
+const defaults = loadConfig({});
 
 const apps: FastifyInstance[] = [];
 

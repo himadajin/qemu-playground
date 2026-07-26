@@ -1,7 +1,7 @@
 import { getTargetDefinition } from "@qemu-playground/shared";
 import { Button, Dialog, Flex, IconButton, Text, TextField } from "@radix-ui/themes";
 import { Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { SavedSnippet } from "../lib/storage";
 
 const LANGUAGE_LABEL = { c: "C", asm: "Assembly" } as const;
@@ -17,11 +17,19 @@ interface SaveDialogProps {
 export function SaveDialog({ open, onOpenChange, defaultName, onSave }: SaveDialogProps) {
   const [name, setName] = useState(defaultName);
 
-  useEffect(() => {
+  // Reset the field to the current default whenever the dialog (re)opens or
+  // the default itself changes while open, mirroring what a
+  // `[open, defaultName]`-keyed effect would do, but adjusted during render
+  // instead of in a post-commit effect.
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevDefaultName, setPrevDefaultName] = useState(defaultName);
+  if (open !== prevOpen || defaultName !== prevDefaultName) {
+    setPrevOpen(open);
+    setPrevDefaultName(defaultName);
     if (open) {
       setName(defaultName);
     }
-  }, [open, defaultName]);
+  }
 
   const trimmed = name.trim();
 
