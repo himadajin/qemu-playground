@@ -1,4 +1,44 @@
 # 自己ホスト実行環境(API サーバー + runner イメージ + cloudflared)の Docker Compose 定義。
-# サービス定義は実装フェーズで追加する。
 # 構成方針は docs/internal/plans/001-prototype/infrastructure.md を参照。
+# 手順は docs/user/self-hosting.md を参照。
 name: qemu-playground
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    # ホストへポートは公開しない(infrastructure.md)。到達経路は cloudflared のみ。
+    environment:
+      RUNNER_IMAGE: qemu-playground-runner:dev
+      DOCKER_SOCKET_PATH: /var/run/docker.sock
+    volumes:
+      # runner を兄弟コンテナとして起動するための Docker ソケット。
+      # bind mount ではなくソケットのみを渡す(apps/api/README.md の実行モデル)。
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # 常駐サービスではない。`docker compose build runner` で
+  # qemu-playground-runner:dev をビルドするためだけの定義で、
+  # profiles により `docker compose up` の対象からは外す。
+  runner:
+    build:
+      context: runner
+    image: qemu-playground-runner:dev
+    profiles: ["build-only"]
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      # Set in .env (see .env.example); left unset here so `docker compose
+      # build`/`config` still work without one (cloudflared itself refuses to
+      # start without a real token, with a clear error).
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    depends_on:
+      - api
+    # Public hostname (`play.himadajin.com` 相当)から `http://api:8080` への
+    # 対応付けは Cloudflare Zero Trust ダッシュボードの Tunnel 設定で行う。
+    # このファイルはコンテナ内から見た到達先(compose ネットワーク内の
+    # `http://api:8080`)を決めるだけで、公開ホスト名の設定はここには現れない。
