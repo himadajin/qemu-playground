@@ -62,21 +62,14 @@ describe("snippet storage", () => {
       new Date("2026-02-01T00:00:00.000Z"),
     );
 
-    expect(loadSnippets(storage).map((s) => s.name)).toEqual([
-      "later",
-      "hello",
-    ]);
+    expect(loadSnippets(storage).map((s) => s.name)).toEqual(["later", "hello"]);
   });
 
   it("replaces a snippet of the same name, keeping its id", () => {
     saveSnippet(storage, INPUT, new Date("2026-01-01T00:00:00.000Z"));
     const originalId = loadSnippets(storage)[0]?.id;
 
-    saveSnippet(
-      storage,
-      { ...INPUT, code: "updated" },
-      new Date("2026-03-01T00:00:00.000Z"),
-    );
+    saveSnippet(storage, { ...INPUT, code: "updated" }, new Date("2026-03-01T00:00:00.000Z"));
 
     const snippets = loadSnippets(storage);
     expect(snippets).toHaveLength(1);
@@ -92,11 +85,7 @@ describe("snippet storage", () => {
 
   it("deletes by id", () => {
     saveSnippet(storage, INPUT, new Date("2026-01-01T00:00:00.000Z"));
-    saveSnippet(
-      storage,
-      { ...INPUT, name: "second" },
-      new Date("2026-02-01T00:00:00.000Z"),
-    );
+    saveSnippet(storage, { ...INPUT, name: "second" }, new Date("2026-02-01T00:00:00.000Z"));
 
     const target = loadSnippets(storage).find((s) => s.name === "hello");
     const remaining = deleteSnippet(storage, target?.id ?? "");

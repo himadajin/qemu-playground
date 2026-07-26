@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  getTargetDefinition,
-  TARGET_IDS,
-  TARGETS,
-  TargetIdSchema,
-} from "../src/targets.js";
+import { getTargetDefinition, TARGET_IDS, TARGETS, TargetIdSchema } from "../src/targets.js";
 
 describe("target definition table", () => {
   it("defines exactly rv64 and aarch64", () => {

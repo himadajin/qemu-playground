@@ -68,7 +68,7 @@ export function createApp(options: CreateAppOptions = {}): FastifyInstance {
     bodyLimit: MAX_CODE_LENGTH * 4,
   });
 
-  app.get("/api/healthz", async () => ({ status: "ok" }));
+  app.get("/api/healthz", () => ({ status: "ok" }));
 
   app.post("/api/run", async (request, reply) => {
     const parsed = RunRequestSchema.safeParse(request.body);

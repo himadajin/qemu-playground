@@ -26,14 +26,9 @@ export interface RunInput {
  * Either the Run produced a result (any of the four statuses, all HTTP 200),
  * or it could not be completed at all and we only have a reason to show.
  */
-export type RunOutcome =
-  | { ok: true; result: RunResult }
-  | { ok: false; message: string };
+export type RunOutcome = { ok: true; result: RunResult } | { ok: false; message: string };
 
-export type FetchLike = (
-  input: string,
-  init?: RequestInit,
-) => Promise<Response>;
+export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
 const defaultFetch: FetchLike = (input, init) => globalThis.fetch(input, init);
 

@@ -26,9 +26,7 @@ function LogSection({ title, text, truncated, placeholder }: LogSectionProps) {
     <section className="log-section">
       <header className="log-section__head">
         <span className="log-section__title">{title}</span>
-        {truncated === true && (
-          <span className="log-section__flag">truncated</span>
-        )}
+        {truncated === true && <span className="log-section__flag">truncated</span>}
       </header>
       {empty ? (
         <p className="log-section__placeholder">{placeholder}</p>
@@ -43,12 +41,7 @@ function LogSection({ title, text, truncated, placeholder }: LogSectionProps) {
  * Right-hand pane: one tab per kind of output, with the short status badge in
  * the header. Detail is always the raw log, never a rephrased summary.
  */
-export function ResultPane({
-  view,
-  tab,
-  onTabChange,
-  language,
-}: ResultPaneProps) {
+export function ResultPane({ view, tab, onTabChange, language }: ResultPaneProps) {
   const { output, build, assembly } = view;
 
   return (
@@ -78,11 +71,7 @@ export function ResultPane({
           )}
         </div>
         {output.log.length > 0 && (
-          <LogSection
-            title="log"
-            text={output.log.join("\n")}
-            placeholder=""
-          />
+          <LogSection title="log" text={output.log.join("\n")} placeholder="" />
         )}
         <LogSection
           title="stdout"
@@ -119,9 +108,7 @@ export function ResultPane({
         {assembly.kind === "code" ? (
           <div className="assembly">
             {assembly.truncated && (
-              <p className="assembly__flag">
-                Output truncated; the assembly below is incomplete.
-              </p>
+              <p className="assembly__flag">Output truncated; the assembly below is incomplete.</p>
             )}
             <div className="assembly__editor">
               <CodeEditor

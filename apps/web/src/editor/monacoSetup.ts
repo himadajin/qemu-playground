@@ -33,11 +33,7 @@ import "monaco-editor/languages/definitions/cpp/register";
 
 import EditorWorker from "monaco-editor/editor/editor.worker?worker";
 
-import {
-  ASM_LANGUAGE_ID,
-  asmLanguage,
-  asmLanguageConfiguration,
-} from "./asmLanguage";
+import { ASM_LANGUAGE_ID, asmLanguage, asmLanguageConfiguration } from "./asmLanguage";
 
 // Only the plain editor worker exists in this bundle; no language service
 // worker is ever requested for C or assembly.
@@ -47,10 +43,7 @@ self.MonacoEnvironment = {
 
 monaco.languages.register({ id: ASM_LANGUAGE_ID, extensions: [".s", ".S", ".asm"] });
 monaco.languages.setMonarchTokensProvider(ASM_LANGUAGE_ID, asmLanguage);
-monaco.languages.setLanguageConfiguration(
-  ASM_LANGUAGE_ID,
-  asmLanguageConfiguration,
-);
+monaco.languages.setLanguageConfiguration(ASM_LANGUAGE_ID, asmLanguageConfiguration);
 
 export { monaco };
 export type MonacoApi = typeof monaco;

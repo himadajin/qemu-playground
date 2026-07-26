@@ -10,14 +10,14 @@ import { signalNameFromStatus } from "../src/signals.js";
  * so the container-independent logic can be checked exactly.
  */
 
-const config: ApiConfig = loadConfig({} as NodeJS.ProcessEnv);
+const config: ApiConfig = loadConfig({});
 
 function stubRunner(outcome: Partial<RunnerOutcome> & { meta: RunnerMeta }) {
   const jobs: RunnerJob[] = [];
   const runner: Runner = {
-    async execute(job) {
+    execute(job) {
       jobs.push(job);
-      return { files: new Map(), watchdogFired: false, ...outcome };
+      return Promise.resolve({ files: new Map(), watchdogFired: false, ...outcome });
     },
   };
   return { runner, jobs };
@@ -230,7 +230,11 @@ describe("schema conformance", () => {
     const outcomes: RunnerOutcome[] = [
       { meta: { finished: true, compileRc: 0, runRc: 0 }, files: new Map(), watchdogFired: false },
       { meta: { finished: true, compileRc: 1 }, files: new Map(), watchdogFired: false },
-      { meta: { finished: true, compileRc: 0, runRc: 139 }, files: new Map(), watchdogFired: false },
+      {
+        meta: { finished: true, compileRc: 0, runRc: 139 },
+        files: new Map(),
+        watchdogFired: false,
+      },
       {
         meta: { finished: true, compileRc: 124, compileMs: config.compileTimeoutMs },
         files: new Map(),

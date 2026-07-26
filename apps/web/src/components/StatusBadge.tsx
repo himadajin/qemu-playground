@@ -1,8 +1,5 @@
 import { Badge, type BadgeProps } from "@radix-ui/themes";
-import {
-  STATUS_BADGE_LABEL,
-  type StatusBadgeKind,
-} from "../lib/runView";
+import { STATUS_BADGE_LABEL, type StatusBadgeKind } from "../lib/runView";
 
 type BadgeColor = BadgeProps["color"];
 

@@ -17,12 +17,7 @@ export type RunPhase =
   | { kind: "failed"; message: string };
 
 export type StatusBadgeKind =
-  | "success"
-  | "compile_error"
-  | "runtime_error"
-  | "timeout"
-  | "running"
-  | "error";
+  "success" | "compile_error" | "runtime_error" | "timeout" | "running" | "error";
 
 export const STATUS_BADGE_LABEL: Record<StatusBadgeKind, string> = {
   success: "success",
@@ -55,8 +50,7 @@ export interface BuildView {
 }
 
 export type AssemblyView =
-  | { kind: "code"; code: string; truncated: boolean }
-  | { kind: "empty"; message: string };
+  { kind: "code"; code: string; truncated: boolean } | { kind: "empty"; message: string };
 
 export interface ResultView {
   badge: StatusBadgeKind | null;
@@ -80,18 +74,13 @@ function emptyOutput(state: string, log: string[] = []): OutputView {
   };
 }
 
-function assemblyFromResult(
-  result: RunResult,
-  language: Language,
-): AssemblyView {
+function assemblyFromResult(result: RunResult, language: Language): AssemblyView {
   if (language === "asm") {
     return { kind: "empty", message: ASM_INPUT_MESSAGE };
   }
 
   const assembly =
-    result.status === "success" ||
-    result.status === "runtime_error" ||
-    result.status === "timeout"
+    result.status === "success" || result.status === "runtime_error" || result.status === "timeout"
       ? result.assembly
       : undefined;
 
@@ -114,10 +103,7 @@ function buildFromResult(result: RunResult): BuildView {
 }
 
 /** Derives everything the result pane renders for the current phase. */
-export function deriveResultView(
-  phase: RunPhase,
-  language: Language,
-): ResultView {
+export function deriveResultView(phase: RunPhase, language: Language): ResultView {
   const idleAssembly: AssemblyView =
     language === "asm"
       ? { kind: "empty", message: ASM_INPUT_MESSAGE }

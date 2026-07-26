@@ -9,7 +9,7 @@ import { RunnerError, type Runner, type RunnerOutcome } from "../src/runner/inde
  * routing rules are checked without Docker in the way.
  */
 
-const baseConfig: ApiConfig = loadConfig({} as NodeJS.ProcessEnv);
+const baseConfig: ApiConfig = loadConfig({});
 
 const okOutcome: RunnerOutcome = {
   meta: { finished: true, compileRc: 0, runRc: 0 },
@@ -33,7 +33,7 @@ afterEach(async () => {
 });
 
 describe("POST /api/run request validation", () => {
-  const app = () => makeApp({ execute: async () => okOutcome });
+  const app = () => makeApp({ execute: () => Promise.resolve(okOutcome) });
 
   it.each([
     ["unknown target", { ...validBody, target: "x86_64" }],
@@ -109,9 +109,8 @@ describe("concurrency limit", () => {
 describe("runner failures", () => {
   it("maps a runner failure to 500 internal_error", async () => {
     const app = makeApp({
-      execute: async () => {
-        throw new RunnerError("Failed to create runner container from image missing:tag");
-      },
+      execute: () =>
+        Promise.reject(new RunnerError("Failed to create runner container from image missing:tag")),
     });
     const response = await app.inject({ method: "POST", url: "/api/run", payload: validBody });
     expect(response.statusCode).toBe(500);
@@ -120,9 +119,7 @@ describe("runner failures", () => {
 
   it("maps an unexpected failure to 500 without leaking its detail", async () => {
     const app = makeApp({
-      execute: async () => {
-        throw new Error("ENOENT /var/run/docker.sock");
-      },
+      execute: () => Promise.reject(new Error("ENOENT /var/run/docker.sock")),
     });
     const response = await app.inject({ method: "POST", url: "/api/run", payload: validBody });
     expect(response.statusCode).toBe(500);
@@ -135,23 +132,27 @@ describe("runner failures", () => {
     let calls = 0;
     const app = makeApp(
       {
-        execute: async () => {
+        execute: () => {
           calls += 1;
-          if (calls === 1) throw new RunnerError("boom");
-          return okOutcome;
+          if (calls === 1) return Promise.reject(new RunnerError("boom"));
+          return Promise.resolve(okOutcome);
         },
       },
       { ...baseConfig, maxConcurrentRuns: 1 },
     );
 
-    expect((await app.inject({ method: "POST", url: "/api/run", payload: validBody })).statusCode).toBe(500);
-    expect((await app.inject({ method: "POST", url: "/api/run", payload: validBody })).statusCode).toBe(200);
+    expect(
+      (await app.inject({ method: "POST", url: "/api/run", payload: validBody })).statusCode,
+    ).toBe(500);
+    expect(
+      (await app.inject({ method: "POST", url: "/api/run", payload: validBody })).statusCode,
+    ).toBe(200);
   });
 });
 
 describe("other routes", () => {
   it("answers the health check", async () => {
-    const response = await makeApp({ execute: async () => okOutcome }).inject({
+    const response = await makeApp({ execute: () => Promise.resolve(okOutcome) }).inject({
       method: "GET",
       url: "/api/healthz",
     });
@@ -160,7 +161,7 @@ describe("other routes", () => {
   });
 
   it("returns the protocol's error shape for unknown routes", async () => {
-    const response = await makeApp({ execute: async () => okOutcome }).inject({
+    const response = await makeApp({ execute: () => Promise.resolve(okOutcome) }).inject({
       method: "GET",
       url: "/api/nope",
     });

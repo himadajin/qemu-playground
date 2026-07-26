@@ -57,14 +57,8 @@ function parseSnippet(value: unknown): SavedSnippet | null {
     language: language.data,
     target: target.data,
     code: record["code"],
-    compileOptions:
-      typeof record["compileOptions"] === "string"
-        ? record["compileOptions"]
-        : "",
-    savedAt:
-      typeof record["savedAt"] === "string"
-        ? record["savedAt"]
-        : new Date(0).toISOString(),
+    compileOptions: typeof record["compileOptions"] === "string" ? record["compileOptions"] : "",
+    savedAt: typeof record["savedAt"] === "string" ? record["savedAt"] : new Date(0).toISOString(),
   };
 }
 
@@ -104,10 +98,7 @@ export function loadSnippets(storage: SnippetStorage): SavedSnippet[] {
   return sortNewestFirst(snippets);
 }
 
-function writeSnippets(
-  storage: SnippetStorage,
-  snippets: SavedSnippet[],
-): SavedSnippet[] {
+function writeSnippets(storage: SnippetStorage, snippets: SavedSnippet[]): SavedSnippet[] {
   const ordered = sortNewestFirst(snippets);
   storage.setItem(SNIPPET_STORAGE_KEY, JSON.stringify(ordered));
   return ordered;
@@ -153,12 +144,7 @@ export function saveSnippet(
 }
 
 /** Deletes one snippet by id. Returns the new list. */
-export function deleteSnippet(
-  storage: SnippetStorage,
-  id: string,
-): SavedSnippet[] {
-  const remaining = loadSnippets(storage).filter(
-    (snippet) => snippet.id !== id,
-  );
+export function deleteSnippet(storage: SnippetStorage, id: string): SavedSnippet[] {
+  const remaining = loadSnippets(storage).filter((snippet) => snippet.id !== id);
   return writeSnippets(storage, remaining);
 }
