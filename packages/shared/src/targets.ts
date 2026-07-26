@@ -23,7 +23,10 @@ const TARGET_DEFINITIONS = [
     displayName: "AArch64",
     gccCommand: "aarch64-linux-gnu-gcc",
     qemuBinary: "qemu-aarch64",
-    qemuSysroot: "/usr/aarch64-linux-gnu",
+    // AArch64 は arm64 ホストのネイティブアーキテクチャで、動的リンカは
+    // コンテナルート直下にある。実行経路を全ターゲットで統一するため
+    // qemu には常に -L <qemuSysroot> を渡す。
+    qemuSysroot: "/",
   },
 ] as const satisfies readonly {
   id: string;

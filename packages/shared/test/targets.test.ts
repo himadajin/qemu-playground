@@ -32,7 +32,7 @@ describe("target definition table", () => {
     expect(aarch64.displayName).toBe("AArch64");
     expect(aarch64.gccCommand).toBe("aarch64-linux-gnu-gcc");
     expect(aarch64.qemuBinary).toBe("qemu-aarch64");
-    expect(aarch64.qemuSysroot).toBe("/usr/aarch64-linux-gnu");
+    expect(aarch64.qemuSysroot).toBe("/");
   });
 
   it("accepts only known target ids via TargetIdSchema", () => {
