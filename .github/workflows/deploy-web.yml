@@ -1,0 +1,39 @@
+name: Deploy web
+
+# apps/api and runner are self-hosted and deployed manually (see
+# docs/user/self-hosting.md); this workflow only ever deploys the static
+# frontend (apps/web) to Cloudflare Workers.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck --workspace @qemu-playground/shared --workspace @qemu-playground/web
+
+      - run: npm run test --workspace @qemu-playground/shared --workspace @qemu-playground/web
+
+      - run: npm run build --workspace @qemu-playground/web
+
+      # Requires the repository secrets CLOUDFLARE_API_TOKEN and
+      # CLOUDFLARE_ACCOUNT_ID (Settings > Secrets and variables > Actions).
+      # Without them wrangler fails with an authentication error; this step
+      # has no fallback because there is nothing sensible to deploy without
+      # Cloudflare credentials.
+      - name: Deploy to Cloudflare Workers
+        working-directory: apps/web
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
