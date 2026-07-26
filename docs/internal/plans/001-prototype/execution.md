@@ -16,8 +16,9 @@ Cloudflare Access により利用者は許可された少人数に限られる�
 
 runner は全ターゲットのツールチェーンを同居させた単一イメージとし、apt ベースで再現できる構成を優先して Ubuntu `24.04` を基準 OS とする。
 runner イメージは linux/arm64 前提とする(自己ホストの arm64 ホストと Apple Silicon の開発機がともに arm64 のため)。
-RV64 向けには apt から `gcc-riscv64-linux-gnu`、`binutils-riscv64-linux-gnu` をインストールする。
-AArch64 は arm64 ホストではネイティブアーキテクチャのため、apt の `gcc`、`binutils` が提供する `aarch64-linux-gnu-*` の triplet 付きコマンドを使う。
+RV64 向けには apt から `gcc-riscv64-linux-gnu`、`binutils-riscv64-linux-gnu`、`libc6-dev-riscv64-cross` をインストールする。
+AArch64 は arm64 ホストではネイティブアーキテクチャのため、apt の `gcc`、`binutils`、`libc6-dev` が提供する `aarch64-linux-gnu-*` の triplet 付きコマンドとヘッダ・ライブラリを使う。
+libc ヘッダ(`libc6-dev` 系)は gcc パッケージの Recommends でしか入らないため、`--no-install-recommends` 構成では明示インストールが必須である。
 QEMU は apt の `qemu-user` をインストールする。Ubuntu `24.04` の `qemu-user` は QEMU `8.2.2` 系で、`qemu-riscv64` と `qemu-aarch64` を提供する。
 Linux user-mode に寄せることで、独自ツールチェーンビルドを初期設計から外す。
 
