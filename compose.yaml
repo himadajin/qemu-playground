@@ -1,0 +1,4 @@
+# 自己ホスト実行環境(API サーバー + runner イメージ + cloudflared)の Docker Compose 定義。
+# サービス定義は実装フェーズで追加する。
+# 構成方針は docs/internal/plans/001-prototype/infrastructure.md を参照。
+name: qemu-playground
