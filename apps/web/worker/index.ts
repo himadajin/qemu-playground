@@ -4,8 +4,11 @@
  * `wrangler.jsonc`'s `assets.run_worker_first` sends only `/api/*` here;
  * every other request is served directly from the static assets built into
  * `dist/` without invoking this handler at all. This proxies `/api/*`
- * through unchanged (no path rewriting, headers untouched) to the
- * self-hosted API, reachable via a Cloudflare Tunnel. See
+ * through unchanged (no path rewriting) to the self-hosted API, reachable
+ * via a Cloudflare Tunnel. The Tunnel hostname is itself protected by a
+ * Cloudflare Access service-token policy, so the token credentials
+ * (Worker secrets) are attached as headers when configured; everything
+ * else in the request is forwarded as-is. See
  * docs/internal/plans/001-prototype/infrastructure.md and
  * docs/user/self-hosting.md.
  */
@@ -13,6 +16,9 @@
 interface Env {
   /** Tunnel origin the API is reachable at, e.g. "https://api-origin.example.com". */
   API_ORIGIN: string;
+  /** Cloudflare Access service token for the API hostname (Worker secrets). */
+  CF_ACCESS_CLIENT_ID?: string;
+  CF_ACCESS_CLIENT_SECRET?: string;
 }
 
 export default {
@@ -21,6 +27,11 @@ export default {
     const origin = new URL(env.API_ORIGIN);
     url.protocol = origin.protocol;
     url.host = origin.host;
-    return fetch(new Request(url, request));
+    const proxied = new Request(url, request);
+    if (env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET) {
+      proxied.headers.set("CF-Access-Client-Id", env.CF_ACCESS_CLIENT_ID);
+      proxied.headers.set("CF-Access-Client-Secret", env.CF_ACCESS_CLIENT_SECRET);
+    }
+    return fetch(proxied);
   },
 };
