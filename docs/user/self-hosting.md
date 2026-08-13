@@ -5,14 +5,14 @@ QEMU Playground を自分のインフラで動かす手順。構成の設計根�
 を参照。
 
 全体像: フロントエンド(静的サイト)は Cloudflare Workers から配信し、
-実行環境(API サーバー + runner)は任意の Linux/arm64 ホスト上で Docker Compose
+実行環境(API サーバー + runner)は任意の linux/amd64 または linux/arm64 ホスト上で Docker Compose
 により自己ホストする。両者は Cloudflare Tunnel と Cloudflare Access を介して
 1 つのホスト名の下で結び付く。
 
 ## 前提
 
-- 自己ホストするマシン: Docker と Docker Compose が動く linux/arm64 ホスト
-  (例: Raspberry Pi 5)。クロスビルドは行わないため arm64 前提。
+- 自己ホストするマシン: Docker と Docker Compose が動く linux/amd64 または
+  linux/arm64 ホスト(例: Raspberry Pi 5)。
 - Cloudflare アカウントと、管理下のドメイン(サブドメインを 1 つ playground に割り当てる)。
 - フロントエンドのデプロイには Cloudflare Workers への `wrangler deploy` 権限
   (API トークンとアカウント ID)が必要。

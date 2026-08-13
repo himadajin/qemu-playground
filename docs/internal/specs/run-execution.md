@@ -6,9 +6,12 @@ API レスポンスの構造は [../contracts/run-protocol.md](../contracts/run-
 
 ## runner イメージ
 
-- `ubuntu:24.04`(linux/arm64)単一イメージに全ターゲットのツールチェーンを同居させる。
-- apt のみでインストールする: `gcc-riscv64-linux-gnu` / `binutils-riscv64-linux-gnu` / `libc6-dev-riscv64-cross`(RV64)、
-  `gcc` / `binutils` / `libc6-dev`(AArch64 ネイティブ、triplet 付きコマンドを提供)、`qemu-user`(QEMU 8.2 系)。
+- `ubuntu:24.04`(linux/amd64 / linux/arm64 両対応)単一イメージに全ターゲットのツールチェーンを同居させる。
+- apt のみでインストールする: `gcc-riscv64-linux-gnu` / `binutils-riscv64-linux-gnu` / `libc6-dev-riscv64-cross`(RV64、両アーキテクチャ共通)、
+  AArch64 は amd64 ホストではクロスツールチェーン(`gcc-aarch64-linux-gnu` / `binutils-aarch64-linux-gnu` / `libc6-dev-arm64-cross`)、
+  arm64 ホストではネイティブ(`gcc` / `binutils` / `libc6-dev`、triplet 付きコマンドを提供)、`qemu-user`(QEMU 8.2 系)。
+- AArch64 の QEMU sysroot はどちらのホストでも `/usr/aarch64-linux-gnu` に統一する
+  (amd64 では実ディレクトリ、arm64 では `/` へのシンボリックリンク)。
 - コンパイル・実行は非 root(`ubuntu`、uid/gid 1000)で行う。
 
 ## コンテナライフサイクル

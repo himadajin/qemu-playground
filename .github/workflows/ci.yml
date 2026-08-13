@@ -25,12 +25,35 @@ jobs:
       - run: npm run typecheck
 
       # apps/api's test/integration.test.ts starts real runner containers
-      # from the linux/arm64-only qemu-playground-runner:dev image (see
-      # runner/Dockerfile); GitHub-hosted runners are x86_64 and cannot build
-      # or run it. API_SKIP_INTEGRATION_TESTS=1 makes apps/api's vitest
-      # config exclude that file (apps/api/vitest.config.ts), so this still
-      # runs apps/api's Docker-independent unit tests plus all of
-      # packages/shared and apps/web.
+      # from the qemu-playground-runner:dev image, which this job does not
+      # build. API_SKIP_INTEGRATION_TESTS=1 makes apps/api's vitest config
+      # exclude that file (apps/api/vitest.config.ts), so this still runs
+      # apps/api's Docker-independent unit tests plus all of packages/shared
+      # and apps/web. The Docker integration tests run in the separate
+      # api-integration job below.
       - run: npm run test
         env:
           API_SKIP_INTEGRATION_TESTS: "1"
+
+  # Builds the runner image and runs apps/api's full test suite including the
+  # Docker integration tests (test/integration.test.ts), which start real
+  # runner containers. Possible on x86_64 GitHub-hosted runners because the
+  # runner image is multi-arch (linux/amd64 and linux/arm64).
+  api-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: runner
+          tags: qemu-playground-runner:dev
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - run: npm run test --workspace @qemu-playground/api

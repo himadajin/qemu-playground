@@ -29,8 +29,8 @@ npm run typecheck --workspace @qemu-playground/api
 npm run test      --workspace @qemu-playground/api  # 統合テストは実 Docker を使う
 ```
 
-`test/integration.test.ts` は実 runner コンテナ(linux/arm64 の
-`qemu-playground-runner:dev`)を起動する。x86_64 の CI などこのイメージが動かせない
+`test/integration.test.ts` は実 runner コンテナ(`qemu-playground-runner:dev`、
+linux/amd64 / linux/arm64 両対応)を起動する。Docker やこのイメージが使えない
 環境では、環境変数 `API_SKIP_INTEGRATION_TESTS=1` を立てるとこのファイルだけ除外される
 (`vitest.config.ts` 参照)。他のテストファイルはスタブ runner を使うため Docker 不要。
 
@@ -99,7 +99,7 @@ bash 側は `mapfile -t -d ''` で配列に戻す。制限値は環境変数で�
    stdout / stderr は別々のファイルへリダイレクトし、プログラムの出力だけを回収する。
 
 ネイティブターゲット(arm64 ホスト上の AArch64)でも QEMU を経由し、`-L` も必ず付ける。
-実行経路をターゲット間で分岐させないためである。
+実行経路をターゲット間・ホストアーキテクチャ間で分岐させないためである。
 
 ### タイムアウトとフェーズ判別
 
