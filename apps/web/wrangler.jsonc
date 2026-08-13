@@ -5,6 +5,16 @@
   "name": "qemu-playground-web",
   "compatibility_date": "2026-07-26",
   "main": "worker/index.ts",
+  // The custom domain is protected by Cloudflare Access; disable the
+  // workers.dev and preview URLs so they cannot bypass it.
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "qemu-playground.himadajin.com",
+      "custom_domain": true,
+    },
+  ],
   "assets": {
     // Output of `npm run build --workspace @qemu-playground/web` (see
     // apps/web/README.md).
@@ -17,9 +27,11 @@
     // Origin the Worker proxies /api/* to: the Cloudflare Tunnel hostname in
     // front of the self-hosted API (see
     // docs/internal/plans/001-prototype/infrastructure.md and
-    // docs/user/self-hosting.md). Replace with the real Tunnel hostname
-    // before deploying, or override per-run with
-    // `wrangler deploy --var API_ORIGIN:https://<real-tunnel-hostname>`.
-    "API_ORIGIN": "https://api-origin.example.com",
+    // docs/user/self-hosting.md). Override per-run with
+    // `wrangler deploy --var API_ORIGIN:https://<other-hostname>` if needed.
+    "API_ORIGIN": "https://qemu-playground-api.himadajin.com",
   },
+  // The Cloudflare Access service token for the API hostname is provided as
+  // Worker secrets CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET
+  // (`wrangler secret put <name>`), not as vars, so it never lands in git.
 }

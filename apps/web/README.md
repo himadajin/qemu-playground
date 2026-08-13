@@ -21,11 +21,14 @@ API は常に同一オリジンの相対パス `POST /api/run` を呼ぶ。
 
 `dist/` を Workers の static assets として配信し、`/api/*` だけ
 `worker/index.ts` の Worker fetch handler が Cloudflare Tunnel オリジンへ
-素通しする(`wrangler.jsonc` の `assets.run_worker_first`)。パス書き換えや
-ヘッダ変更は行わない。
+素通しする(`wrangler.jsonc` の `assets.run_worker_first`)。パス書き換えは
+行わない。Tunnel ホスト名は Cloudflare Access の Service Token ポリシーで
+保護されているため、Worker secrets `CF_ACCESS_CLIENT_ID` /
+`CF_ACCESS_CLIENT_SECRET` が設定されていれば対応するヘッダを付与する。
 
-デプロイ先オリジンは `wrangler.jsonc` の `vars.API_ORIGIN` で設定する
-(プレースホルダ値なので実値に置き換える)。`main` への push で
+配信ホスト名(カスタムドメイン)とプロキシ先オリジンは `wrangler.jsonc` の
+`routes` と `vars.API_ORIGIN` で設定する。Access を迂回できないよう
+workers.dev / preview URL は無効化している。`main` への push で
 `.github/workflows/deploy-web.yml` が自動デプロイする。手動デプロイ・
 ローカル確認・Cloudflare 側の前提作業は
 [docs/user/self-hosting.md](../../docs/user/self-hosting.md) を参照。
