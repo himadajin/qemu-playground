@@ -1,11 +1,11 @@
 import { configDefaults, defineConfig } from "vitest/config";
 
 // test/integration.test.ts starts real runner containers, which needs a
-// working Docker daemon and the linux/arm64-only qemu-playground-runner:dev
-// image (see runner/Dockerfile). GitHub-hosted runners are x86_64 and cannot
-// build or run that image, so CI sets this to skip the file entirely rather
-// than trying to run it. Local development is unaffected: the variable is
-// unset there, so the integration suite runs as before.
+// working Docker daemon and the qemu-playground-runner:dev image (see
+// runner/Dockerfile). Environments without Docker or without that image
+// built set this to skip the file entirely rather than trying to run it.
+// Local development is unaffected: the variable is unset there, so the
+// integration suite runs as before.
 const skipIntegrationTests = process.env.API_SKIP_INTEGRATION_TESTS === "1";
 
 export default defineConfig({

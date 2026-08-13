@@ -76,7 +76,7 @@ describe("argv construction", () => {
     await service.run({ ...cRequest, target: "aarch64" });
 
     expect(jobs[0]?.runArgv).toEqual(["qemu-riscv64", "-L", "/usr/riscv64-linux-gnu", "./prog"]);
-    expect(jobs[1]?.runArgv).toEqual(["qemu-aarch64", "-L", "/", "./prog"]);
+    expect(jobs[1]?.runArgv).toEqual(["qemu-aarch64", "-L", "/usr/aarch64-linux-gnu", "./prog"]);
   });
 });
 
