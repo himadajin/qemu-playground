@@ -12,25 +12,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-2);
-  padding-right: var(--space-3);
-  border-bottom: 1px solid var(--gray-6);
-  background-color: var(--gray-2);
+  gap: 8px;
+  padding-right: 16px;
+  background-color: var(--background);
+  border-bottom: 1px solid var(--border);
 }
 
 .result__tabs {
-  box-shadow: none;
-  padding-inline: var(--space-2);
+  display: flex;
+  gap: 16px;
+  padding-inline: 8px;
 }
 
 .result__panel {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-}
-
-.result__panel[hidden] {
-  display: none;
 }
 
 .result__panel--flush {
@@ -43,58 +40,78 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--gray-4);
+  gap: 8px;
+  padding: 8px 16px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
 }
 
 .result__exit {
-  font-family: var(--code-font-family, ui-monospace, monospace);
-  color: var(--gray-11);
+  font-family: var(--font-mono);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
   white-space: nowrap;
+}
+
+/* ------------------------------------------------------------- status badge */
+/* Achromatic severity: hairline + 70% ink for ordinary states, full ink for
+   failures. */
+
+.status-badge {
+  padding: 2px 8px;
+  background-color: var(--background);
+}
+
+.status-badge--normal {
+  border: 1px solid var(--border);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
+}
+
+.status-badge--error {
+  border: 1px solid var(--foreground);
+  color: var(--foreground);
 }
 
 /* --------------------------------------------------------------------- logs */
 
 .log-section + .log-section {
-  border-top: 1px solid var(--gray-4);
+  border-top: 1px solid var(--border);
 }
 
 .log-section__head {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-3);
-  background-color: var(--gray-2);
-  border-bottom: 1px solid var(--gray-4);
+  gap: 8px;
+  padding: 4px 16px;
+  background-color: var(--background);
+  border-bottom: 1px solid var(--border);
 }
 
 .log-section__title {
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--gray-11);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
 }
 
+/* A warning, but still ink: full opacity is the emphasis. */
 .log-section__flag {
-  font-size: 11px;
-  color: var(--amber-11);
+  color: var(--foreground);
 }
 
 .log-section__placeholder {
   margin: 0;
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--font-size-1);
-  color: var(--gray-10);
+  padding: 8px 16px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
 }
 
 .log {
   margin: 0;
-  padding: var(--space-2) var(--space-3);
-  font-family: var(--code-font-family, ui-monospace, monospace);
-  font-size: 12.5px;
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
   line-height: 1.55;
-  color: var(--gray-12);
+  color: var(--foreground);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -110,10 +127,11 @@
 
 .assembly__flag {
   margin: 0;
-  padding: var(--space-1) var(--space-3);
-  font-size: 11px;
-  color: var(--amber-11);
-  border-bottom: 1px solid var(--gray-4);
+  padding: 4px 16px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
 }
 
 .assembly__editor {

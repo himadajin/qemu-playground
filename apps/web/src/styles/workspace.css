@@ -14,7 +14,7 @@
 }
 
 .workspace__pane + .workspace__pane {
-  border-left: 1px solid var(--gray-6);
+  border-left: 1px solid var(--border);
 }
 
 .workspace--stacked {
@@ -23,8 +23,11 @@
 
 .workspace__switch {
   flex: 0 0 auto;
-  border-bottom: 1px solid var(--gray-6);
-  padding-inline: var(--space-2);
+  display: flex;
+  gap: 16px;
+  padding-inline: 8px;
+  background-color: var(--background);
+  border-bottom: 1px solid var(--border);
 }
 
 .workspace__panel {
@@ -34,8 +37,45 @@
   flex-direction: column;
 }
 
-.workspace__panel[hidden] {
+/* forceMount keeps both panels mounted; the headless primitive only marks the
+   inactive one, so hiding is ours to do. */
+.workspace__panel[data-state="inactive"] {
   display: none;
+}
+
+/* --------------------------------------------------------------------- tabs */
+/* Shared by the workspace switch and the result pane tabs: no face, no border;
+   the underline alone says where you are. */
+
+.tab {
+  appearance: none;
+  margin: 0;
+  padding: 8px 4px;
+  border: none;
+  background: none;
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color 150ms,
+    text-decoration-color 150ms;
+}
+
+.tab:hover:not(:disabled) {
+  color: var(--foreground);
+  text-decoration: underline dashed 1px;
+  text-underline-offset: 4px;
+}
+
+.tab[data-state="active"] {
+  color: var(--foreground);
+  text-decoration: underline solid 2px;
+  text-underline-offset: 4px;
+}
+
+.tab:disabled {
+  color: color-mix(in srgb, var(--foreground) 35%, transparent);
+  cursor: default;
 }
 
 /* ------------------------------------------------------------- editor shell */
@@ -44,26 +84,28 @@
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  background-color: #fff;
+  background-color: var(--background);
 }
 
-.editor-shell__surface,
-.editor-shell__overlay {
+.editor-shell__surface {
   position: absolute;
   inset: 0;
 }
 
 .editor-shell__overlay {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: flex-start;
-  padding: var(--space-4);
-  background-color: #fff;
+  padding: 16px;
+  background-color: var(--background);
 }
 
 .editor-shell__message {
   margin: 0;
-  font-size: var(--font-size-1);
-  color: var(--gray-11);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
 }
 
 .editor-skeleton {
@@ -75,8 +117,7 @@
 
 .editor-skeleton__line {
   height: 10px;
-  border-radius: 2px;
-  background-color: var(--gray-4);
+  background-color: var(--border);
 }
 
 .editor-skeleton__line--lg {

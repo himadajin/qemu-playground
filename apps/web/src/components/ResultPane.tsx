@@ -1,5 +1,5 @@
 import type { Language } from "@qemu-playground/shared";
-import { Tabs, Text } from "@radix-ui/themes";
+import * as Tabs from "@radix-ui/react-tabs";
 import type { ResultView } from "../lib/runView";
 import { CodeEditor } from "./CodeEditor";
 import { StatusBadge } from "./StatusBadge";
@@ -25,8 +25,8 @@ function LogSection({ title, text, truncated, placeholder }: LogSectionProps) {
   return (
     <section className="log-section">
       <header className="log-section__head">
-        <span className="log-section__title">{title}</span>
-        {truncated === true && <span className="log-section__flag">truncated</span>}
+        <span className="log-section__title meta-label">{title}</span>
+        {truncated === true && <span className="log-section__flag meta-label">truncated</span>}
       </header>
       {empty ? (
         <p className="log-section__placeholder">{placeholder}</p>
@@ -51,10 +51,14 @@ export function ResultPane({ view, tab, onTabChange, language }: ResultPaneProps
       onValueChange={(value) => onTabChange(value as ResultTab)}
     >
       <div className="result__head">
-        <Tabs.List size="1" className="result__tabs">
-          <Tabs.Trigger value="output">Output</Tabs.Trigger>
-          <Tabs.Trigger value="build">Build</Tabs.Trigger>
-          <Tabs.Trigger value="assembly" disabled={language === "asm"}>
+        <Tabs.List className="result__tabs">
+          <Tabs.Trigger className="tab meta-label" value="output">
+            Output
+          </Tabs.Trigger>
+          <Tabs.Trigger className="tab meta-label" value="build">
+            Build
+          </Tabs.Trigger>
+          <Tabs.Trigger className="tab meta-label" value="assembly" disabled={language === "asm"}>
             Assembly
           </Tabs.Trigger>
         </Tabs.List>
@@ -63,12 +67,8 @@ export function ResultPane({ view, tab, onTabChange, language }: ResultPaneProps
 
       <Tabs.Content className="result__panel" value="output">
         <div className="result__state">
-          <Text size="1">{output.state}</Text>
-          {output.exit !== null && (
-            <Text size="1" className="result__exit">
-              {output.exit}
-            </Text>
-          )}
+          <span>{output.state}</span>
+          {output.exit !== null && <span className="result__exit">{output.exit}</span>}
         </div>
         {output.log.length > 0 && (
           <LogSection title="log" text={output.log.join("\n")} placeholder="" />

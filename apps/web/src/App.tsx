@@ -1,5 +1,5 @@
 import type { Language, TargetId } from "@qemu-playground/shared";
-import { Tabs } from "@radix-ui/themes";
+import * as Tabs from "@radix-ui/react-tabs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CodeEditor } from "./components/CodeEditor";
 import { ResultPane, type ResultTab } from "./components/ResultPane";
@@ -214,11 +214,17 @@ export function App() {
           value={mainTab}
           onValueChange={(value) => setMainTab(value as "code" | "result")}
         >
-          <Tabs.List size="1" className="workspace__switch">
-            <Tabs.Trigger value="code">Code</Tabs.Trigger>
-            <Tabs.Trigger value="result">Result</Tabs.Trigger>
+          <Tabs.List className="workspace__switch">
+            <Tabs.Trigger className="tab meta-label" value="code">
+              Code
+            </Tabs.Trigger>
+            <Tabs.Trigger className="tab meta-label" value="result">
+              Result
+            </Tabs.Trigger>
           </Tabs.List>
-          {/* forceMount keeps the editor alive across switches. */}
+          {/* forceMount keeps the editor alive across switches; the headless
+              primitive leaves both panels mounted and visible, so the inactive
+              one is hidden by CSS on [data-state="inactive"]. */}
           <Tabs.Content className="workspace__panel" value="code" forceMount>
             {editor}
           </Tabs.Content>
