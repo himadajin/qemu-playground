@@ -30,8 +30,7 @@
 
 html,
 body,
-#root,
-#root > .radix-themes {
+#root {
   height: 100%;
 }
 

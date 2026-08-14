@@ -21,6 +21,7 @@ const EDITOR_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
   automaticLayout: true,
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
+  fontFamily: '"Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
   fontSize: 13,
   lineHeight: 20,
   tabSize: 4,
