@@ -43,41 +43,6 @@
   display: none;
 }
 
-/* --------------------------------------------------------------------- tabs */
-/* Shared by the workspace switch and the result pane tabs: no face, no border;
-   the underline alone says where you are. */
-
-.tab {
-  appearance: none;
-  margin: 0;
-  padding: 8px 4px;
-  border: none;
-  background: none;
-  color: color-mix(in srgb, var(--foreground) 70%, transparent);
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    color 150ms,
-    text-decoration-color 150ms;
-}
-
-.tab:hover:not(:disabled) {
-  color: var(--foreground);
-  text-decoration: underline dashed 1px;
-  text-underline-offset: 4px;
-}
-
-.tab[data-state="active"] {
-  color: var(--foreground);
-  text-decoration: underline solid 2px;
-  text-underline-offset: 4px;
-}
-
-.tab:disabled {
-  color: color-mix(in srgb, var(--foreground) 35%, transparent);
-  cursor: default;
-}
-
 /* ------------------------------------------------------------- editor shell */
 
 .editor-shell {

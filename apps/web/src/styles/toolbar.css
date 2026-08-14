@@ -98,6 +98,9 @@
   border-radius: 0;
   background-color: var(--background);
   padding: 4px 0;
+  /* Keep a longer target list inside the viewport. */
+  max-height: var(--radix-select-content-available-height);
+  overflow-y: auto;
 }
 
 .toolbar__select-item {
@@ -129,6 +132,7 @@
 /* -------------------------------------------------------- compile options */
 
 .toolbar__options {
+  box-sizing: border-box;
   width: 200px;
   min-width: 96px;
   border: 1px solid var(--border);
@@ -139,7 +143,6 @@
   font-size: 13px;
   line-height: 20px;
   color: var(--foreground);
-  transition: border-color 150ms;
 }
 
 .toolbar__options::placeholder {
