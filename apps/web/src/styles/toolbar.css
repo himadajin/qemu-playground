@@ -4,24 +4,189 @@
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--gray-6);
-  background-color: var(--gray-2);
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--background);
 }
 
 .toolbar__brand {
-  font-size: var(--font-size-1);
-  font-weight: 500;
-  color: var(--gray-12);
-  margin-right: var(--space-1);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+  margin-right: 8px;
   white-space: nowrap;
 }
+
+/* ------------------------------------------------------- language toggle */
+
+.toolbar__toggle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.toolbar__toggle-item {
+  appearance: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  padding: 2px 0;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
+  cursor: pointer;
+  transition:
+    color 150ms,
+    border-color 150ms;
+}
+
+.toolbar__toggle-item:hover {
+  color: var(--foreground);
+  /* Dashed = "you can go here"; drawn as a border so it never shifts layout. */
+  border-bottom-style: dashed;
+  border-bottom-width: 1px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 35%, transparent);
+  padding-bottom: 3px;
+}
+
+.toolbar__toggle-item[aria-checked="true"] {
+  color: var(--foreground);
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: var(--foreground);
+  padding-bottom: 2px;
+}
+
+/* ---------------------------------------------------------- target select */
+
+.toolbar__select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background-color: var(--background);
+  padding: 4px 8px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 20px;
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
+  cursor: pointer;
+  transition:
+    color 150ms,
+    background-color 150ms,
+    border-color 150ms;
+}
+
+.toolbar__select-trigger:hover {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.toolbar__select-chevron {
+  font-family: var(--font-mono);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
+}
+
+.toolbar__select-content {
+  border: 1px solid var(--foreground);
+  border-radius: 0;
+  background-color: var(--background);
+  padding: 4px 0;
+}
+
+.toolbar__select-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 20px;
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
+  cursor: pointer;
+  outline: none;
+  transition:
+    color 150ms,
+    background-color 150ms;
+}
+
+.toolbar__select-item[data-highlighted] {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.toolbar__select-indicator {
+  font-family: var(--font-mono);
+  color: var(--foreground);
+}
+
+/* -------------------------------------------------------- compile options */
 
 .toolbar__options {
   width: 200px;
   min-width: 96px;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background-color: var(--background);
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--foreground);
+  transition: border-color 150ms;
 }
+
+.toolbar__options::placeholder {
+  color: color-mix(in srgb, var(--foreground) 35%, transparent);
+}
+
+/* ------------------------------------------------------------- run button */
+
+/* The single inverted surface in the app; no hover state by design. */
+.toolbar__run {
+  appearance: none;
+  border: 0;
+  border-radius: 0;
+  background-color: var(--foreground);
+  color: var(--background);
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+
+.toolbar__run:disabled {
+  background-color: color-mix(in srgb, var(--foreground) 35%, transparent);
+  cursor: default;
+}
+
+/* -------------------------------------------------- open / save / share */
+
+.toolbar__action {
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background-color: var(--background);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
+  padding: 5px 10px;
+  cursor: pointer;
+  transition:
+    color 150ms,
+    background-color 150ms,
+    border-color 150ms;
+}
+
+.toolbar__action:hover {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+/* ---------------------------------------------------------------- notice */
 
 .toolbar__spacer {
   flex: 1 1 auto;
@@ -32,4 +197,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.toolbar__notice--error {
+  color: var(--foreground);
+}
+
+.toolbar__notice--info {
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
 }
