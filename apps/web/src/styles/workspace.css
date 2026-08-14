@@ -1,0 +1,98 @@
+/* ---------------------------------------------------------------- workspace */
+
+.workspace {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.workspace__pane {
+  flex: 1 1 50%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace__pane + .workspace__pane {
+  border-left: 1px solid var(--border);
+}
+
+.workspace--stacked {
+  flex-direction: column;
+}
+
+.workspace__switch {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 16px;
+  padding-inline: 8px;
+  background-color: var(--background);
+  border-bottom: 1px solid var(--border);
+}
+
+.workspace__panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* forceMount keeps both panels mounted; the headless primitive only marks the
+   inactive one, so hiding is ours to do. */
+.workspace__panel[data-state="inactive"] {
+  display: none;
+}
+
+/* ------------------------------------------------------------- editor shell */
+
+.editor-shell {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background-color: var(--background);
+}
+
+.editor-shell__surface {
+  position: absolute;
+  inset: 0;
+}
+
+.editor-shell__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  padding: 16px;
+  background-color: var(--background);
+}
+
+.editor-shell__message {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
+}
+
+.editor-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.editor-skeleton__line {
+  height: 10px;
+  background-color: var(--border);
+}
+
+.editor-skeleton__line--lg {
+  width: 46%;
+}
+
+.editor-skeleton__line--md {
+  width: 32%;
+}
+
+.editor-skeleton__line--sm {
+  width: 18%;
+}

@@ -1,6 +1,6 @@
 import { TARGETS, type Language, type TargetId } from "@qemu-playground/shared";
-import { Button, SegmentedControl, Select, Text, TextField } from "@radix-ui/themes";
-import { FolderOpen, Play, Save, Share2 } from "lucide-react";
+import * as Select from "@radix-ui/react-select";
+import { useRef, type KeyboardEvent } from "react";
 
 export interface ToolbarNotice {
   tone: "info" | "error";
@@ -22,6 +22,11 @@ interface ToolbarProps {
   notice: ToolbarNotice | null;
 }
 
+const LANGUAGES: ReadonlyArray<{ value: Language; label: string }> = [
+  { value: "c", label: "C" },
+  { value: "asm", label: "Assembly" },
+];
+
 /**
  * The only permanent control surface: language, target, compile options and
  * the four actions. No settings panel, no sidebar (ui.md).
@@ -40,38 +45,81 @@ export function Toolbar({
   onShare,
   notice,
 }: ToolbarProps) {
+  const languageRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  // WAI-ARIA radio group pattern: arrows move focus and select in one step.
+  const handleLanguageKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const step =
+      event.key === "ArrowRight" || event.key === "ArrowDown"
+        ? 1
+        : event.key === "ArrowLeft" || event.key === "ArrowUp"
+          ? -1
+          : 0;
+    if (step === 0) {
+      return;
+    }
+    event.preventDefault();
+    const nextIndex = (index + step + LANGUAGES.length) % LANGUAGES.length;
+    const next = LANGUAGES[nextIndex];
+    if (next === undefined) {
+      return;
+    }
+    languageRefs.current[nextIndex]?.focus();
+    onLanguageChange(next.value);
+  };
+
   return (
     <header className="toolbar">
       <span className="toolbar__brand">QEMU Playground</span>
 
-      <SegmentedControl.Root
-        size="1"
-        value={language}
-        onValueChange={(value) => onLanguageChange(value as Language)}
-        aria-label="Language"
-      >
-        <SegmentedControl.Item value="c">C</SegmentedControl.Item>
-        <SegmentedControl.Item value="asm">Assembly</SegmentedControl.Item>
-      </SegmentedControl.Root>
+      <div className="toolbar__toggle" role="radiogroup" aria-label="Language">
+        {LANGUAGES.map((item, index) => (
+          <button
+            key={item.value}
+            ref={(node) => {
+              languageRefs.current[index] = node;
+            }}
+            type="button"
+            role="radio"
+            aria-checked={language === item.value}
+            tabIndex={language === item.value ? 0 : -1}
+            className="toolbar__toggle-item"
+            onClick={() => onLanguageChange(item.value)}
+            onKeyDown={(event) => handleLanguageKeyDown(event, index)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
 
-      <Select.Root
-        size="1"
-        value={target}
-        onValueChange={(value) => onTargetChange(value as TargetId)}
-      >
-        <Select.Trigger aria-label="Target" variant="surface" color="gray" />
-        <Select.Content position="popper">
-          {TARGETS.map((definition) => (
-            <Select.Item key={definition.id} value={definition.id}>
-              {definition.displayName}
-            </Select.Item>
-          ))}
-        </Select.Content>
+      <Select.Root value={target} onValueChange={(value) => onTargetChange(value as TargetId)}>
+        <Select.Trigger className="toolbar__select-trigger" aria-label="Target">
+          <Select.Value />
+          <Select.Icon className="toolbar__select-chevron">▾</Select.Icon>
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Content className="toolbar__select-content" position="popper">
+            <Select.Viewport>
+              {TARGETS.map((definition) => (
+                <Select.Item
+                  key={definition.id}
+                  value={definition.id}
+                  className="toolbar__select-item"
+                >
+                  <Select.ItemText>{definition.displayName}</Select.ItemText>
+                  <Select.ItemIndicator className="toolbar__select-indicator">
+                    ✓
+                  </Select.ItemIndicator>
+                </Select.Item>
+              ))}
+            </Select.Viewport>
+          </Select.Content>
+        </Select.Portal>
       </Select.Root>
 
-      <TextField.Root
+      <input
         className="toolbar__options"
-        size="1"
+        type="text"
         placeholder="-O2"
         spellCheck={false}
         autoComplete="off"
@@ -80,36 +128,33 @@ export function Toolbar({
         onChange={(event) => onCompileOptionsChange(event.target.value)}
       />
 
-      <Button size="1" onClick={onRun} disabled={running} loading={running} aria-label="Run">
-        <Play size={14} aria-hidden="true" />
+      <button
+        type="button"
+        className="toolbar__run meta-label"
+        onClick={onRun}
+        disabled={running}
+        aria-label="Run"
+      >
         Run
-      </Button>
+      </button>
 
       <div className="toolbar__spacer" />
 
       {notice !== null && (
-        <Text
-          className="toolbar__notice"
-          size="1"
-          color={notice.tone === "error" ? "red" : "gray"}
-          role="status"
-        >
+        <span className={`toolbar__notice toolbar__notice--${notice.tone}`} role="status">
           {notice.text}
-        </Text>
+        </span>
       )}
 
-      <Button size="1" variant="surface" color="gray" onClick={onOpen}>
-        <FolderOpen size={14} aria-hidden="true" />
+      <button type="button" className="toolbar__action meta-label" onClick={onOpen}>
         Open
-      </Button>
-      <Button size="1" variant="surface" color="gray" onClick={onSave}>
-        <Save size={14} aria-hidden="true" />
+      </button>
+      <button type="button" className="toolbar__action meta-label" onClick={onSave}>
         Save
-      </Button>
-      <Button size="1" variant="surface" color="gray" onClick={onShare}>
-        <Share2 size={14} aria-hidden="true" />
+      </button>
+      <button type="button" className="toolbar__action meta-label" onClick={onShare}>
         Share
-      </Button>
+      </button>
     </header>
   );
 }

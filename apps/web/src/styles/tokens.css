@@ -1,0 +1,90 @@
+/* Design foundation: achromatic ink-on-paper tokens, shared by every file. */
+
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #171717;
+  --accent: #171717; /* alias of ink, kept for later adjustment */
+  --muted: #f5f5f5;
+  --border: #ebebeb;
+  --font-sans:
+    "Geist Variable", "Noto Sans JP Variable", system-ui, -apple-system, "Hiragino Sans",
+    "Yu Gothic", Meiryo, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Single scale for meta labels; callers vary only ink opacity. */
+.meta-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------- tabs */
+/* Shared by the workspace switch and the result pane tabs: no face, no border;
+   the underline alone says where you are. */
+
+.tab {
+  appearance: none;
+  margin: 0;
+  padding: 8px 4px;
+  border: none;
+  background: none;
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 150ms;
+}
+
+/* Longhands: engines without shorthand-thickness support drop the whole
+   `text-decoration` declaration otherwise. */
+.tab:hover:not(:disabled):not([data-state="active"]) {
+  color: var(--foreground);
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.tab[data-state="active"] {
+  color: var(--foreground);
+  text-decoration-line: underline;
+  text-decoration-style: solid;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.tab:disabled {
+  color: color-mix(in srgb, var(--foreground) 35%, transparent);
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background-color: var(--background);
+  /* Monaco widgets carry z-index up to 10000; isolating the app keeps them
+     below the dialog portal, which renders outside .app. */
+  isolation: isolate;
+}

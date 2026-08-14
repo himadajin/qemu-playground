@@ -1,5 +1,6 @@
-import { Theme } from "@radix-ui/themes";
-import "@radix-ui/themes/styles.css";
+import "@fontsource-variable/geist";
+import "@fontsource-variable/geist-mono";
+import "@fontsource-variable/noto-sans-jp";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
@@ -12,16 +13,6 @@ if (container === null) {
 
 createRoot(container).render(
   <StrictMode>
-    {/* Light mode is fixed; there is no theme switcher (ui.md). */}
-    <Theme
-      appearance="light"
-      accentColor="blue"
-      grayColor="slate"
-      radius="small"
-      scaling="95%"
-      panelBackground="solid"
-    >
-      <App />
-    </Theme>
+    <App />
   </StrictMode>,
 );

@@ -1,6 +1,5 @@
 import { getTargetDefinition } from "@qemu-playground/shared";
-import { Button, Dialog, Flex, IconButton, Text, TextField } from "@radix-ui/themes";
-import { Trash2 } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
 import { useState } from "react";
 import type { SavedSnippet } from "../lib/storage";
 
@@ -35,38 +34,46 @@ export function SaveDialog({ open, onOpenChange, defaultName, onSave }: SaveDial
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Content size="1" maxWidth="380px">
-        <Dialog.Title size="3">Save snippet</Dialog.Title>
-        <Dialog.Description size="1" color="gray" mb="3">
-          Stored in this browser only. Saving under an existing name replaces it.
-        </Dialog.Description>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (trimmed !== "") {
-              onSave(trimmed);
-            }
-          }}
-        >
-          <TextField.Root
-            size="1"
-            autoFocus
-            placeholder="Snippet name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-          <Flex gap="2" justify="end" mt="3">
-            <Dialog.Close>
-              <Button size="1" variant="surface" color="gray" type="button">
-                Cancel
-              </Button>
-            </Dialog.Close>
-            <Button size="1" type="submit" disabled={trimmed === ""}>
-              Save
-            </Button>
-          </Flex>
-        </form>
-      </Dialog.Content>
+      <Dialog.Portal>
+        <Dialog.Overlay className="dialog__overlay" />
+        <Dialog.Content className="dialog__panel dialog__panel--save">
+          <Dialog.Title className="dialog__title">Save snippet</Dialog.Title>
+          <Dialog.Description className="dialog__description">
+            Stored in this browser only. Saving under an existing name replaces it.
+          </Dialog.Description>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (trimmed !== "") {
+                onSave(trimmed);
+              }
+            }}
+          >
+            <input
+              className="dialog__input"
+              type="text"
+              autoFocus
+              placeholder="Snippet name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+            <div className="dialog__actions">
+              <Dialog.Close asChild>
+                <button type="button" className="dialog__button meta-label">
+                  Cancel
+                </button>
+              </Dialog.Close>
+              <button
+                type="submit"
+                className="dialog__button dialog__button--strong meta-label"
+                disabled={trimmed === ""}
+              >
+                Save
+              </button>
+            </div>
+          </form>
+        </Dialog.Content>
+      </Dialog.Portal>
     </Dialog.Root>
   );
 }
@@ -83,53 +90,53 @@ interface OpenDialogProps {
 export function OpenDialog({ open, onOpenChange, snippets, onSelect, onDelete }: OpenDialogProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Content size="1" maxWidth="420px">
-        <Dialog.Title size="3">Open snippet</Dialog.Title>
-        <Dialog.Description size="1" color="gray" mb="3">
-          Saved in this browser.
-        </Dialog.Description>
+      <Dialog.Portal>
+        <Dialog.Overlay className="dialog__overlay" />
+        <Dialog.Content className="dialog__panel dialog__panel--open">
+          <Dialog.Title className="dialog__title">Open snippet</Dialog.Title>
+          <Dialog.Description className="dialog__description">
+            Saved in this browser.
+          </Dialog.Description>
 
-        {snippets.length === 0 ? (
-          <Text size="1" color="gray">
-            Nothing saved yet.
-          </Text>
-        ) : (
-          <ul className="snippet-list">
-            {snippets.map((snippet) => (
-              <li key={snippet.id} className="snippet-list__row">
-                <button
-                  type="button"
-                  className="snippet-list__open"
-                  onClick={() => onSelect(snippet)}
-                >
-                  <span className="snippet-list__name">{snippet.name}</span>
-                  <span className="snippet-list__meta">
-                    {LANGUAGE_LABEL[snippet.language]} ·{" "}
-                    {getTargetDefinition(snippet.target).displayName}
-                  </span>
-                </button>
-                <IconButton
-                  size="1"
-                  variant="ghost"
-                  color="gray"
-                  aria-label={`Delete ${snippet.name}`}
-                  onClick={() => onDelete(snippet)}
-                >
-                  <Trash2 size={14} aria-hidden="true" />
-                </IconButton>
-              </li>
-            ))}
-          </ul>
-        )}
+          {snippets.length === 0 ? (
+            <p className="dialog__empty">Nothing saved yet.</p>
+          ) : (
+            <ul className="snippet-list">
+              {snippets.map((snippet) => (
+                <li key={snippet.id} className="snippet-list__row">
+                  <button
+                    type="button"
+                    className="snippet-list__open"
+                    onClick={() => onSelect(snippet)}
+                  >
+                    <span className="snippet-list__name">{snippet.name}</span>
+                    <span className="snippet-list__meta meta-label">
+                      {LANGUAGE_LABEL[snippet.language]} ·{" "}
+                      {getTargetDefinition(snippet.target).displayName}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="snippet-list__delete"
+                    aria-label={`Delete ${snippet.name}`}
+                    onClick={() => onDelete(snippet)}
+                  >
+                    <span aria-hidden="true">×</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
 
-        <Flex justify="end" mt="3">
-          <Dialog.Close>
-            <Button size="1" variant="surface" color="gray">
-              Close
-            </Button>
-          </Dialog.Close>
-        </Flex>
-      </Dialog.Content>
+          <div className="dialog__actions">
+            <Dialog.Close asChild>
+              <button type="button" className="dialog__button meta-label">
+                Close
+              </button>
+            </Dialog.Close>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
     </Dialog.Root>
   );
 }
