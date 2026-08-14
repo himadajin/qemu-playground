@@ -1,0 +1,49 @@
+/* Design foundation: achromatic ink-on-paper tokens, shared by every file. */
+
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #171717;
+  --accent: #171717; /* alias of ink, kept for later adjustment */
+  --muted: #f5f5f5;
+  --border: #ebebeb;
+  --font-sans:
+    "Geist Variable", "Noto Sans JP Variable", system-ui, -apple-system, "Hiragino Sans",
+    "Yu Gothic", Meiryo, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Single scale for meta labels; callers vary only ink opacity. */
+.meta-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+html,
+body,
+#root,
+#root > .radix-themes {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background-color: var(--background);
+}

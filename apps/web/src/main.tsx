@@ -1,3 +1,6 @@
+import "@fontsource-variable/geist";
+import "@fontsource-variable/geist-mono";
+import "@fontsource-variable/noto-sans-jp";
 import { Theme } from "@radix-ui/themes";
 import "@radix-ui/themes/styles.css";
 import { StrictMode } from "react";
