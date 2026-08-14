@@ -32,6 +32,17 @@ export default {
       proxied.headers.set("CF-Access-Client-Id", env.CF_ACCESS_CLIENT_ID);
       proxied.headers.set("CF-Access-Client-Secret", env.CF_ACCESS_CLIENT_SECRET);
     }
-    return fetch(proxied);
+    const response = await fetch(proxied);
+    // Access on the API hostname sets its own CF_Authorization session cookie
+    // after service-token auth. Forwarding it would overwrite the browser's
+    // CF_Authorization cookie for this hostname (a different Access app) and
+    // break the user's session, so never forward Set-Cookie from the API.
+    const headers = new Headers(response.headers);
+    headers.delete("Set-Cookie");
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
   },
 };
