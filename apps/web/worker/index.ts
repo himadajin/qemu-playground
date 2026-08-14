@@ -9,7 +9,7 @@
  * Cloudflare Access service-token policy, so the token credentials
  * (Worker secrets) are attached as headers when configured; everything
  * else in the request is forwarded as-is. See
- * docs/internal/plans/001-prototype/infrastructure.md and
+ * docs/internal/specs/deployment.md and
  * docs/user/self-hosting.md.
  */
 

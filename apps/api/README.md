@@ -6,7 +6,7 @@ Run ごとに短命 runner コンテナを起動してコンパイルと QEMU us
 - プロトコル: [docs/internal/contracts/run-protocol.md](../../docs/internal/contracts/run-protocol.md)
 - リクエスト/レスポンスの正: `packages/shared/src/protocol.ts` の Zod スキーマ
 - ターゲット定義の正: `packages/shared/src/targets.ts`
-- 実行隔離の方針: [docs/internal/plans/001-prototype/execution.md](../../docs/internal/plans/001-prototype/execution.md)
+- 実行隔離の方針: [docs/internal/specs/run-execution.md](../../docs/internal/specs/run-execution.md)
 
 ## 起動
 

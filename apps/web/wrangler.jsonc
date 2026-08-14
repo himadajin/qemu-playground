@@ -26,7 +26,7 @@
   "vars": {
     // Origin the Worker proxies /api/* to: the Cloudflare Tunnel hostname in
     // front of the self-hosted API (see
-    // docs/internal/plans/001-prototype/infrastructure.md and
+    // docs/internal/specs/deployment.md and
     // docs/user/self-hosting.md). Override per-run with
     // `wrangler deploy --var API_ORIGIN:https://<other-hostname>` if needed.
     "API_ORIGIN": "https://qemu-playground-api.himadajin.com",
