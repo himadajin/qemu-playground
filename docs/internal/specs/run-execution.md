@@ -17,6 +17,9 @@ API レスポンスの構造は [../contracts/run-protocol.md](../contracts/run-
 ## コンテナライフサイクル
 
 - API は Run ごとに短命 runner コンテナを Docker ソケット経由の兄弟コンテナとして起動する。
+  ソケットは API コンテナにのみマウントし、他のコンテナには渡さない。
+  API コンテナが侵害された場合にホストの Docker を握られるトレードオフは、
+  Cloudflare Access で利用者を許可した少人数に限定している前提で許容する。
 - bind mount は使わない。ソース・ドライバスクリプト・argv ファイルは put archive で `/work` へ注入し、
   成果物(ログ、stdout/stderr、生成アセンブリ、メタ情報)は get archive で回収する。
   これにより API がホスト直実行でもコンテナ内実行でも同一コードで動く。

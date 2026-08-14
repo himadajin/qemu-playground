@@ -1,7 +1,7 @@
 # @qemu-playground/web
 
 React/Vite フロントエンド。コード入力、Run、結果表示が 1 画面で完結する playground。
-画面仕様は `docs/internal/plans/001-prototype/ui.md` を正とする。
+画面仕様は `docs/internal/specs/web-frontend.md` を正とする。
 
 ## 起動
 

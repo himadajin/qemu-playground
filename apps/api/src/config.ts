@@ -2,7 +2,7 @@
  * Runtime configuration, read from the environment.
  *
  * Every knob has a default that is sensible for the small self-hosted
- * deployment described in docs/internal/plans/001-prototype/execution.md, so
+ * deployment described in docs/internal/specs/run-execution.md, so
  * the server starts with no environment set at all. The README documents the
  * same list.
  */
