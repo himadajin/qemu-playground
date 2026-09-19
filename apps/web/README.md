@@ -63,13 +63,33 @@ LocalStorage のキー `qemu-playground:snippets:v1` に配列として保存す
   常設のサイドバーやファイルツリーは持たない。
 - 壊れたエントリは読み飛ばし、一覧全体を失わない。
 
-## エディタ
+## Editor
 
-Monaco Editor は動的 import で遅延ロードする。
-ツールバーと画面骨格を先に描画し、エディタ領域は固定サイズの shell と
-skeleton で埋めてレイアウトシフトを避ける。
+The complete CodeMirror 6 editor component is loaded with `React.lazy`.
+`Suspense` displays Mantine Skeleton placeholders inside a fixed-size shell while
+it loads, so the toolbar and workspace render immediately without layout shifts.
+An editor-scoped error boundary shows an accessible reload message if loading fails.
 
-バンドルにはエディタ本体と必要な contribution、C の文法だけを含める
-(`src/editor/monacoSetup.ts`)。パッケージ既定のエントリは全言語と
-TypeScript 言語サービスを巻き込むため使わない。
-アセンブリは Monarch の独自定義 (`src/editor/asmLanguage.ts`) で色付けする。
+`CodeEditor` integrates `EditorView` directly. The editor core, extensions, C mode
+(`@codemirror/lang-cpp`), and assembly modes are bundled into one lazy chunk.
+Assembly uses the legacy GNU assembler modes: `gas` for RV64 and as the fallback
+for other targets, and `gasArm` for AArch64. A small adaptation recognizes AArch64
+`//` comments while preserving `#` immediates; comment toggling uses `#` on RV64
+and `//` on AArch64. The modes provide basic highlighting, not complete
+architecture-specific instruction or register coverage.
+
+The configuration starts with `minimalSetup` and adds line numbers, search and
+replace, bracket matching and closing, and indentation. No completion, diagnostics,
+folding, formatting, or language service is enabled. The light theme uses Geist
+Mono, non-wrapping lines, and independent editor scrolling.
+
+The React value controls the document. Editor edits notify `onChange`; matching
+values preserve editing state. A different external value resets undo history,
+selection, cursor, and scroll. Language, target, and read-only changes reconfigure
+the existing view. Narrow-layout Code/Result tabs keep the source editor mounted.
+Generated assembly uses the target captured when its Run was submitted and is
+read-only, focusable, selectable, copyable, and searchable. Closing its result tab
+unmounts the view and discards its editing state.
+
+See [Using the playground](../../docs/user/usage.md) for keyboard controls,
+including **Escape, then Tab** to leave the editor.

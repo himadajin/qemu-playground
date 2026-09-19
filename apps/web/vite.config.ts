@@ -19,8 +19,4 @@ export default defineConfig({
       },
     },
   },
-  build: {
-    // Monaco is loaded as one lazy chunk; its size is expected.
-    chunkSizeWarningLimit: 4096,
-  },
 });

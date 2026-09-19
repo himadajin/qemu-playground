@@ -15,15 +15,17 @@ import { theme } from "../src/theme";
 // Replace only the editor engine: the real app, controls, protocol, and storage run together.
 // DOM identity of the textarea detects accidental source-editor unmounts.
 const editorDisposed = vi.hoisted(() => vi.fn());
-vi.mock("../src/components/CodeEditor", () => ({
-  CodeEditor: function TestEditor({
+vi.mock("../src/components/LazyCodeEditor", () => ({
+  LazyCodeEditor: function TestEditor({
     value,
     ariaLabel,
+    target,
     readOnly,
     onChange,
   }: {
     value: string;
     ariaLabel: string;
+    target: string;
     readOnly?: boolean;
     onChange?: (value: string) => void;
   }) {
@@ -36,6 +38,7 @@ vi.mock("../src/components/CodeEditor", () => ({
     return (
       <textarea
         aria-label={ariaLabel}
+        data-target={target}
         value={value}
         readOnly={readOnly}
         onChange={(event) => onChange?.(event.currentTarget.value)}
@@ -221,6 +224,39 @@ describe("playground interactions", () => {
     await user.click(screen.getByRole("button", { name: "Run" }));
     expect(screen.getByRole("tab", { name: "Result" })).toHaveAttribute("aria-selected", "true");
     expect(await screen.findByText("hello result")).toBeVisible();
+  });
+
+  it("keeps generated assembly associated with its submitted target after the target changes", async () => {
+    let finish!: (response: Response) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    mount();
+    await user.click(screen.getByRole("button", { name: "Run" }));
+    await user.click(screen.getByRole("combobox", { name: "Target" }));
+    await user.click(screen.getByRole("option", { name: /AArch64/ }));
+    expect(source()).toHaveAttribute("data-target", "aarch64");
+    await act(async () => {
+      finish(response(result));
+      await Promise.resolve();
+    });
+    await user.click(screen.getByRole("tab", { name: "Assembly" }));
+    expect(screen.getByRole("textbox", { name: "Generated assembly" })).toHaveAttribute(
+      "data-target",
+      "rv64",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Run" }));
+    await screen.findByText("hello result");
+    await user.click(screen.getByRole("tab", { name: "Assembly" }));
+    expect(screen.getByRole("textbox", { name: "Generated assembly" })).toHaveAttribute(
+      "data-target",
+      "aarch64",
+    );
   });
 
   it("saves, overwrites, opens and deletes existing snippets with named dialogs", async () => {

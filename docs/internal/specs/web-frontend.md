@@ -60,11 +60,29 @@ The labels are `success`, `compile error`, `runtime error`, `timeout`, `running`
 
 ## Loading and editors
 
-- The toolbar and workspace render before Monaco loads. A fixed-size editor shell with Mantine
-  Skeleton placeholders reserves the editor's space and avoids layout shifts.
-- Monaco is loaded lazily and uses its built-in `vs` theme, Geist Mono, and 13px code text.
-- Generated assembly is read-only. Source editing remains available while a Run is in progress.
-- An editor loading failure displays an accessible message asking the user to reload.
+- The toolbar and workspace render before the complete CodeMirror 6 editor component loads through
+  React.lazy. Suspense displays Mantine Skeleton placeholders in a fixed-size editor shell, avoiding
+  layout shifts. The core, extensions, and all language modes share one lazy editor chunk.
+- Editors use a light theme based on the application's Mantine tokens, Geist Mono, and 13px code text.
+  Both source and generated assembly have line numbers. Long lines do not wrap; each editor fills its
+  container and scrolls horizontally and vertically. Focus, selection, and search matches are visible.
+- Editing supports undo/redo, search/replace, bracket matching and automatic closing, indentation,
+  language-aware comment toggling, and syntax highlighting. Tab indents and Shift+Tab unindents;
+  Escape followed by Tab moves focus out of the editor. There is no completion, diagnostics,
+  formatting, folding, or language service.
+- C uses the C/C++ language package. Assembly uses the legacy GNU assembler modes: gas for RV64 and
+  future targets without a dedicated mode, and gasArm for AArch64. Line comments are recognized and
+  toggled with # on RV64 and // on AArch64; AArch64 # immediates remain code. Highlighting is basic,
+  without complete instruction or register coverage for either architecture.
+- React controls the document. Editor edits update React; receiving the same text does not reset
+  editor state or notify React again. A different external value starts a replacement document with
+  empty undo history, collapsed selection at the start, and scroll at the top left. Language, target,
+  and read-only changes preserve the view and editing state unless the document also changes.
+- Generated assembly is read-only but remains focusable, selectable, copyable, searchable, and
+  scrollable. Its language mode uses the target captured when the Run was submitted, even if the
+  selected target later changes. Source editing remains available while a Run is in progress.
+- An editor-scoped error boundary displays an accessible reload message on loading failure; the
+  surrounding toolbar and results remain available.
 
 ## Visual design
 
@@ -75,8 +93,8 @@ The labels are `success`, `compile error`, `runtime error`, `timeout`, `running`
 - Mantine SegmentedControl, Select, TextInput, Button, NavLink, Tabs, Modal, Alert, Badge, Skeleton,
   and Splitter provide the common controls. Custom CSS handles playground layout, divider appearance, scrolling, log formatting,
   and editor positioning.
-- Monaco widgets are contained in the app's stacking context so that dropdowns and modal portals
-  render above them.
+- Editor search panels stay inside their editor containers. Dropdowns and modal portals render
+  above the workspace; no editor-specific elevated stacking layer is used.
 
 ## Dialogs and keyboard access
 
