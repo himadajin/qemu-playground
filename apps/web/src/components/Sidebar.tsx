@@ -50,12 +50,14 @@ export function SidebarToggle({
   opened,
   controls,
   label,
+  iconOnly = false,
   onToggle,
 }: {
   side?: "left" | "right";
   opened: boolean;
   controls: string;
   label: string;
+  iconOnly?: boolean;
   onToggle: () => void;
 }) {
   const Icon =
@@ -69,12 +71,12 @@ export function SidebarToggle({
   return (
     <Tooltip
       label={label}
-      disabled={opened}
+      disabled={!iconOnly && opened}
       position={side === "left" ? "right" : "left"}
       events={{ hover: true, focus: true, touch: false }}
     >
       <UnstyledButton
-        className="sidebar__action"
+        className="sidebar__action sidebar__toggle"
         aria-label={label}
         aria-expanded={opened}
         aria-controls={controls}
@@ -83,9 +85,11 @@ export function SidebarToggle({
         <span className="sidebar__icon">
           <Icon size={18} />
         </span>
-        <span className="sidebar__label" aria-hidden="true">
-          {label}
-        </span>
+        {!iconOnly && (
+          <span className="sidebar__label" aria-hidden="true">
+            {label}
+          </span>
+        )}
       </UnstyledButton>
     </Tooltip>
   );

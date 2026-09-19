@@ -17,6 +17,7 @@ export function FileSidebarRail({ opened, drawer = false, onToggle, onNew, onImp
     <Stack className="sidebar__actions" gap={8}>
       <SidebarToggle
         opened={opened}
+        iconOnly={!drawer}
         label={toggleLabel}
         controls={drawer ? "drawer-files" : "desktop-files"}
         onToggle={onToggle}

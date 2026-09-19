@@ -11,11 +11,11 @@ A single-screen playground for entering code, running it, and inspecting results
   are clamped for display without being rewritten until the next resize. Collapse
   sidebar, New file, and Import files are stacked above the Files heading and full-width
   list. Only the list scrolls; actions stay at the top.
-- Collapsed actions show icons with hover/focus tooltips. Expanded actions add labels;
-  the whole row is clickable. Width changes take effect immediately; labels transition
-  over 180ms unless reduced motion is enabled. Hidden sidebar content cannot
-  receive focus. The open/closed preference is saved; creating or importing a program
-  does not change it.
+- The sidebar toggle shows only its icon in both states and exposes its action through
+  hover/focus tooltips. New file and Import files add labels when expanded; the whole row
+  remains clickable. Width changes take effect immediately; action labels transition over
+  180ms unless reduced motion is enabled. Hidden sidebar content cannot receive focus.
+  The open/closed preference is saved; creating or importing a program does not change it.
 - The results sidebar starts open at 400px, with a minimum width of 320px. It can collapse
   to a 44px rail with an Expand results button. Its pixel width and open state are saved
   under `qemu-playground:results-width:v1` and `qemu-playground:results-open:v1`, independently

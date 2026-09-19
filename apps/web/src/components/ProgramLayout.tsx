@@ -171,6 +171,7 @@ export function ProgramLayout({
                             <SidebarToggle
                               side="right"
                               opened={resultsOpen}
+                              iconOnly
                               controls="desktop-results"
                               label={resultsOpen ? "Collapse results" : "Expand results"}
                               onToggle={() => setResultsOpen((value) => !value)}

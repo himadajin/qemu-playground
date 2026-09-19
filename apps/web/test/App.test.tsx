@@ -391,12 +391,14 @@ describe("playground interactions", () => {
     const user = userEvent.setup();
     let mounted = mount();
     const editor = source();
+    expect(
+      screen.getByRole("button", { name: "Collapse sidebar" }).querySelector(".sidebar__label"),
+    ).toBeNull();
     await user.click(screen.getByRole("button", { name: "Collapse sidebar" }));
     expect(screen.queryByRole("navigation", { name: "Files" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveAttribute(
-      "aria-expanded",
-      "false",
-    );
+    const expandSidebar = screen.getByRole("button", { name: "Expand sidebar" });
+    expect(expandSidebar).toHaveAttribute("aria-expanded", "false");
+    expect(expandSidebar.querySelector(".sidebar__label")).toBeNull();
     expect(source()).toBe(editor);
     expect(loadFiles(localStorage).sidebarOpen).toBe(false);
 
@@ -434,13 +436,15 @@ describe("playground interactions", () => {
     await user.click(screen.getByRole("tab", { name: "Assembly" }));
     const assembly = screen.getByRole("textbox", { name: "Generated assembly" });
     assembly.scrollTop = 120;
+    expect(
+      screen.getByRole("button", { name: "Collapse results" }).querySelector(".sidebar__label"),
+    ).toBeNull();
     await user.click(screen.getByRole("button", { name: "Collapse results" }));
     expect(screen.queryByRole("button", { name: "Run" })).toBeNull();
     expect(screen.queryByRole("tablist", { name: "Results" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Expand results" })).toHaveAttribute(
-      "aria-expanded",
-      "false",
-    );
+    const expandResults = screen.getByRole("button", { name: "Expand results" });
+    expect(expandResults).toHaveAttribute("aria-expanded", "false");
+    expect(expandResults.querySelector(".sidebar__label")).toBeNull();
     expect(assembly).toBeInTheDocument();
     expect(source()).toBe(editor);
     expect(editorDisposed).not.toHaveBeenCalled();
@@ -731,7 +735,12 @@ describe("playground interactions", () => {
       Object.defineProperty(file, "text", {
         value: () => Promise.resolve("int main(void) { return 0; }"),
       });
-      if (narrow) await user.click(screen.getByRole("button", { name: "Show files" }));
+      if (narrow) {
+        await user.click(screen.getByRole("button", { name: "Show files" }));
+        expect(screen.getByRole("button", { name: "Close sidebar" })).toHaveTextContent(
+          "Close sidebar",
+        );
+      }
       await user.upload(screen.getByLabelText("Import source file"), file);
       const firstDialog = await screen.findByRole("dialog", { name: "Import source" });
       expect(screen.queryByRole("dialog", { name: "Your programs" })).not.toBeInTheDocument();

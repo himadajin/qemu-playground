@@ -213,6 +213,9 @@
 .sidebar__action:hover {
   background: var(--mantine-color-default-hover);
 }
+.sidebar[data-side="right"] .sidebar__toggle {
+  justify-content: flex-end;
+}
 .sidebar__icon {
   display: flex;
   align-items: center;

@@ -32,9 +32,10 @@ checks, manual deployment, and infrastructure setup, see
 
 The sidebar manages independent, single-source programs. Above 1080px, a persistent
 sidebar uses 44px for icons or starts at 240px when expanded. Drag its divider to choose
-any width from 160px to 420px; resizing is immediate, labels respect reduced-motion
-preferences, and the width is saved under `qemu-playground:sidebar-width:v1`. Collapsed labels
-appear in hover/focus tooltips. At 1080px or below, a button beside Code / Result / Run
+any width from 160px to 420px; resizing is immediate, action labels respect reduced-motion
+preferences, and the width is saved under `qemu-playground:sidebar-width:v1`. Sidebar toggles
+stay icon-only in both states, with their action names available through hover/focus tooltips.
+At 1080px or below, a button beside Code / Result / Run
 opens a fixed 280px overlay drawer with the same vertical layout. Files have unique names,
 fixed language and assembly architecture, and per-file compiler options and C target.
 Creation, rename, duplication, deletion, source import/download, and accessible manual
