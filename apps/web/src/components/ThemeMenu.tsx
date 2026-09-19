@@ -1,6 +1,6 @@
 import { ActionIcon, Menu, Tooltip, useMantineColorScheme } from "@mantine/core";
 import { IconSunMoon } from "@tabler/icons-react";
-import { isThemeChoice, THEME_CHOICES, themeChoiceLabel } from "../lib/colorScheme";
+import { isThemeChoice, THEME_CHOICES, themeChoiceLabel } from "../lib/colorSchemeConfig";
 
 export function ThemeMenu() {
   const { colorScheme, setColorScheme } = useMantineColorScheme();

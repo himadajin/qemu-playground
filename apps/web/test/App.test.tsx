@@ -7,7 +7,12 @@ import userEvent from "@testing-library/user-event";
 import { useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/App";
-import { COLOR_SCHEME_STORAGE_KEY, colorSchemeManager } from "../src/lib/colorScheme";
+import { colorSchemeManager } from "../src/lib/colorScheme";
+import {
+  COLOR_SCHEME_MEDIA_QUERY,
+  COLOR_SCHEME_STORAGE_KEY,
+  DEFAULT_COLOR_SCHEME,
+} from "../src/lib/colorSchemeConfig";
 import { getSample } from "../src/lib/samples";
 import { buildShareUrl } from "../src/lib/share";
 import { loadSnippets, saveSnippet } from "../src/lib/storage";
@@ -69,13 +74,12 @@ const response = (body: unknown, status = 200) =>
   });
 const matchMediaMock = vi.fn<(query: string) => MediaQueryList>();
 Object.defineProperty(window, "matchMedia", { writable: true, value: matchMediaMock });
-const SYSTEM_COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
 type MediaChangeListener = (event: MediaQueryListEvent) => void;
 const systemListeners = new Set<MediaChangeListener>();
 let systemDark = false;
 
 function createMediaQueryList(query: string): MediaQueryList {
-  const isSystemColorScheme = query === SYSTEM_COLOR_SCHEME_QUERY;
+  const isSystemColorScheme = query === COLOR_SCHEME_MEDIA_QUERY;
   const addListener = (listener: MediaChangeListener) => {
     if (isSystemColorScheme) systemListeners.add(listener);
   };
@@ -104,7 +108,7 @@ function createMediaQueryList(query: string): MediaQueryList {
 
 function setSystemColorScheme(dark: boolean) {
   systemDark = dark;
-  const event = { matches: dark, media: SYSTEM_COLOR_SCHEME_QUERY } as MediaQueryListEvent;
+  const event = { matches: dark, media: COLOR_SCHEME_MEDIA_QUERY } as MediaQueryListEvent;
   for (const listener of systemListeners) listener(event);
 }
 
@@ -114,7 +118,7 @@ function mount(env: "test" | "default" = "test") {
     <MantineProvider
       theme={theme}
       colorSchemeManager={colorSchemeManager}
-      defaultColorScheme="auto"
+      defaultColorScheme={DEFAULT_COLOR_SCHEME}
       env={env}
     >
       <App />
@@ -156,7 +160,7 @@ describe("playground interactions", () => {
 
     await user.click(screen.getByRole("button", { name: "Theme: Dark" }));
     await user.click(screen.getByRole("menuitemradio", { name: "System" }));
-    expect(window.localStorage.getItem(COLOR_SCHEME_STORAGE_KEY)).toBe("auto");
+    expect(window.localStorage.getItem(COLOR_SCHEME_STORAGE_KEY)).toBe(DEFAULT_COLOR_SCHEME);
     expect(screen.getByRole("button", { name: "Theme: System" })).toBeVisible();
 
     act(() => setSystemColorScheme(true));
@@ -173,7 +177,7 @@ describe("playground interactions", () => {
 
   it("restores a persisted System choice before mount and follows the initial system scheme", async () => {
     systemDark = true;
-    window.localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, "auto");
+    window.localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, DEFAULT_COLOR_SCHEME);
     mount();
 
     expect(screen.getByRole("button", { name: "Theme: System" })).toBeVisible();
