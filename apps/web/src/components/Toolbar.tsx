@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 import { useTimeout } from "@mantine/hooks";
 import { TARGETS, type Language, type TargetId } from "@qemu-playground/shared";
+import { ThemeMenu } from "./ThemeMenu";
 
 export interface ToolbarNotice {
   tone: "info" | "error";
@@ -111,6 +112,7 @@ export function Toolbar({
           notice={notices.share}
           onDismiss={onDismissNotice}
         />
+        <ThemeMenu />
       </Group>
     </header>
   );

@@ -24,9 +24,13 @@ A single-screen playground for entering code, running it, and inspecting results
 
 ## Toolbar
 
-- The controls are language, target, compile options, `Run`, `Open`, `Save`, and `Share`.
+- The controls are language, target, compile options, `Run`, `Open`, `Save`, `Share`, and an
+  icon-only Theme menu.
 - Language uses a segmented control; target uses a non-clearable select.
 - `Run` is the primary action. `Share` encodes the current code, language, target, and compiler options.
+- Theme uses a Mantine `ActionIcon` with an accessible name and tooltip. Its menu offers `System`,
+  `Light`, and `Dark`; the selected choice is persisted in LocalStorage under
+  `qemu-playground:color-scheme:v1`.
 - Compile options are always visible and optional. The placeholder gives an example (`-O2`);
   there is no additional tooltip or explanatory text.
 - During execution, Run displays a loading indicator and is disabled. An in-flight guard also
@@ -63,9 +67,11 @@ The labels are `success`, `compile error`, `runtime error`, `timeout`, `running`
 - The toolbar and workspace render before the complete CodeMirror 6 editor component loads through
   React.lazy. Suspense displays Mantine Skeleton placeholders in a fixed-size editor shell, avoiding
   layout shifts. The core, extensions, and all language modes share one lazy editor chunk.
-- Editors use a light theme based on the application's Mantine tokens, Geist Mono, and 13px code text.
-  Both source and generated assembly have line numbers. Long lines do not wrap; each editor fills its
-  container and scrolls horizontally and vertically. Focus, selection, and search matches are visible.
+- Editors follow the active application color scheme using Mantine tokens, Geist Mono, and 13px code
+  text. The default `System` choice follows `prefers-color-scheme` and updates while the page is open;
+  `Light` and `Dark` override it. Both source and generated assembly have line numbers. Long lines do
+  not wrap; each editor fills its container and scrolls horizontally and vertically. Focus, selection,
+  and search matches are visible.
 - Editing supports undo/redo, search/replace, bracket matching and automatic closing, indentation,
   language-aware comment toggling, and syntax highlighting. Tab indents and Shift+Tab unindents;
   Escape followed by Tab moves focus out of the editor. There is no completion, diagnostics,
@@ -87,7 +93,9 @@ The labels are `success`, `compile error`, `runtime error`, `timeout`, `running`
 ## Visual design
 
 - Mantine provides standard component colors, radii, shadows, focus states, and interaction feedback.
-  Light mode is fixed; there is no dark-mode control.
+  The theme control is icon-only so it preserves the compact toolbar while remaining discoverable by
+  tooltip and accessible name. The application starts in `System` mode and supports explicit light and
+  dark overrides.
 - The centralized theme retains Geist for UI text, Noto Sans JP as its Japanese fallback, and
   Geist Mono for code and logs. Controls use compact standard sizes; code and logs use 13px text.
 - Mantine SegmentedControl, Select, TextInput, Button, NavLink, Tabs, Modal, Alert, Badge, Skeleton,

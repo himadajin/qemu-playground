@@ -1,5 +1,5 @@
 import type { Language, TargetId } from "@qemu-playground/shared";
-import { Tabs } from "@mantine/core";
+import { Tabs, useComputedColorScheme } from "@mantine/core";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ResizableWorkspace } from "./components/ResizableWorkspace";
 import { LazyCodeEditor } from "./components/LazyCodeEditor";
@@ -61,6 +61,7 @@ export function App() {
     reset: resetClipboard,
   } = useClipboard({ timeout: 2000 });
   const isNarrow = useMediaQuery(NARROW_QUERY, undefined, { getInitialValueInEffect: false });
+  const colorScheme = useComputedColorScheme("light", { getInitialValueInEffect: false });
   const running = phase.kind === "running";
   const runInFlight = useRef(false);
   const view = useMemo(() => deriveResultView(phase, language), [phase, language]);
@@ -189,6 +190,7 @@ export function App() {
       value={code}
       language={language}
       target={target}
+      colorScheme={colorScheme}
       ariaLabel="Source code"
       onChange={setCode}
     />
@@ -201,6 +203,7 @@ export function App() {
       onTabChange={setResultTab}
       language={language}
       target={resultTarget}
+      colorScheme={colorScheme}
     />
   );
 

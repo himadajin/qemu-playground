@@ -7,6 +7,7 @@ import userEvent from "@testing-library/user-event";
 import { useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/App";
+import { COLOR_SCHEME_STORAGE_KEY, colorSchemeManager } from "../src/lib/colorScheme";
 import { getSample } from "../src/lib/samples";
 import { buildShareUrl } from "../src/lib/share";
 import { loadSnippets, saveSnippet } from "../src/lib/storage";
@@ -20,12 +21,14 @@ vi.mock("../src/components/LazyCodeEditor", () => ({
     value,
     ariaLabel,
     target,
+    colorScheme,
     readOnly,
     onChange,
   }: {
     value: string;
     ariaLabel: string;
     target: string;
+    colorScheme?: "light" | "dark";
     readOnly?: boolean;
     onChange?: (value: string) => void;
   }) {
@@ -39,6 +42,7 @@ vi.mock("../src/components/LazyCodeEditor", () => ({
       <textarea
         aria-label={ariaLabel}
         data-target={target}
+        data-color-scheme={colorScheme}
         value={value}
         readOnly={readOnly}
         onChange={(event) => onChange?.(event.currentTarget.value)}
@@ -65,10 +69,54 @@ const response = (body: unknown, status = 200) =>
   });
 const matchMediaMock = vi.fn<(query: string) => MediaQueryList>();
 Object.defineProperty(window, "matchMedia", { writable: true, value: matchMediaMock });
+const SYSTEM_COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
+type MediaChangeListener = (event: MediaQueryListEvent) => void;
+const systemListeners = new Set<MediaChangeListener>();
+let systemDark = false;
+
+function createMediaQueryList(query: string): MediaQueryList {
+  const isSystemColorScheme = query === SYSTEM_COLOR_SCHEME_QUERY;
+  const addListener = (listener: MediaChangeListener) => {
+    if (isSystemColorScheme) systemListeners.add(listener);
+  };
+  const removeListener = (listener: MediaChangeListener) => {
+    if (isSystemColorScheme) systemListeners.delete(listener);
+  };
+  return {
+    matches: isSystemColorScheme && systemDark,
+    media: query,
+    onchange: null,
+    addListener,
+    removeListener,
+    addEventListener: (_type: string, listener: EventListenerOrEventListenerObject) => {
+      if (isSystemColorScheme && typeof listener === "function") {
+        systemListeners.add(listener);
+      }
+    },
+    removeEventListener: (_type: string, listener: EventListenerOrEventListenerObject) => {
+      if (isSystemColorScheme && typeof listener === "function") {
+        systemListeners.delete(listener);
+      }
+    },
+    dispatchEvent: () => true,
+  } as MediaQueryList;
+}
+
+function setSystemColorScheme(dark: boolean) {
+  systemDark = dark;
+  const event = { matches: dark, media: SYSTEM_COLOR_SCHEME_QUERY } as MediaQueryListEvent;
+  for (const listener of systemListeners) listener(event);
+}
+
 const fetchMock = vi.fn<typeof fetch>();
 function mount(env: "test" | "default" = "test") {
   return render(
-    <MantineProvider theme={theme} forceColorScheme="light" env={env}>
+    <MantineProvider
+      theme={theme}
+      colorSchemeManager={colorSchemeManager}
+      defaultColorScheme="auto"
+      env={env}
+    >
       <App />
     </MantineProvider>,
   );
@@ -83,19 +131,45 @@ beforeEach(() => {
   window.history.replaceState(null, "", "/");
   fetchMock.mockReset().mockResolvedValue(response(result));
   vi.stubGlobal("fetch", fetchMock);
-  matchMediaMock.mockImplementation((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  }));
+  systemDark = false;
+  systemListeners.clear();
+  matchMediaMock.mockImplementation(createMediaQueryList);
 });
 
 describe("playground interactions", () => {
+  it("changes theme from the icon menu, persists it, and follows the system in auto mode", async () => {
+    const user = userEvent.setup();
+    mount();
+
+    expect(screen.getByRole("button", { name: "Theme: System" })).toBeVisible();
+    expect(source()).toHaveAttribute("data-color-scheme", "light");
+
+    await user.click(screen.getByRole("button", { name: "Theme: System" }));
+    await user.click(screen.getByRole("menuitemradio", { name: "Dark" }));
+    await waitFor(() => {
+      expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", "dark");
+      expect(source()).toHaveAttribute("data-color-scheme", "dark");
+    });
+    expect(window.localStorage.getItem(COLOR_SCHEME_STORAGE_KEY)).toBe("dark");
+    expect(screen.getByRole("button", { name: "Theme: Dark" })).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Theme: Dark" }));
+    await user.click(screen.getByRole("menuitemradio", { name: "System" }));
+    expect(window.localStorage.getItem(COLOR_SCHEME_STORAGE_KEY)).toBe("auto");
+    expect(screen.getByRole("button", { name: "Theme: System" })).toBeVisible();
+
+    act(() => setSystemColorScheme(true));
+    await waitFor(() => {
+      expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", "dark");
+      expect(source()).toHaveAttribute("data-color-scheme", "dark");
+    });
+    act(() => setSystemColorScheme(false));
+    await waitFor(() => {
+      expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", "light");
+      expect(source()).toHaveAttribute("data-color-scheme", "light");
+    });
+  });
+
   it("changes untouched samples with keyboard controls, preserves edits, and keeps a target selected", async () => {
     const user = userEvent.setup();
     mount();

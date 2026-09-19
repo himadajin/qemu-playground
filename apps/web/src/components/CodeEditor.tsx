@@ -8,12 +8,13 @@ import type { Language, TargetId } from "@qemu-playground/shared";
 import { minimalSetup } from "codemirror";
 import { useLayoutEffect, useRef } from "react";
 import { editorLanguage } from "../editor/languages";
-import { editorTheme } from "../editor/theme";
+import { editorTheme, type EditorColorScheme } from "../editor/theme";
 
 export interface CodeEditorProps {
   value: string;
   language: Language;
   target: TargetId;
+  colorScheme?: EditorColorScheme;
   readOnly?: boolean;
   ariaLabel: string;
   onChange?: (value: string) => void;
@@ -41,7 +42,6 @@ const editing = [
   indentOnInput(),
   indentUnit.of("    "),
   EditorState.tabSize.of(4),
-  editorTheme,
 ];
 
 export function CodeEditor(props: CodeEditorProps) {
@@ -50,6 +50,7 @@ export function CodeEditor(props: CodeEditorProps) {
   const editorRef = useRef<{
     view: EditorView;
     language: Compartment;
+    theme: Compartment;
     interaction: Compartment;
     createState: (props: CodeEditorProps) => EditorState;
     props: CodeEditorProps;
@@ -61,6 +62,7 @@ export function CodeEditor(props: CodeEditorProps) {
 
   useLayoutEffect(() => {
     const language = new Compartment();
+    const theme = new Compartment();
     const access = new Compartment();
     const createState = (current: CodeEditorProps) =>
       EditorState.create({
@@ -68,6 +70,7 @@ export function CodeEditor(props: CodeEditorProps) {
         extensions: [
           editing,
           language.of(editorLanguage(current.language, current.target)),
+          theme.of(editorTheme(current.colorScheme ?? "light")),
           access.of(interaction(current)),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) latest.current.onChange?.(update.state.doc.toString());
@@ -81,6 +84,7 @@ export function CodeEditor(props: CodeEditorProps) {
     editorRef.current = {
       view,
       language,
+      theme,
       interaction: access,
       createState,
       props: latest.current,
@@ -104,6 +108,9 @@ export function CodeEditor(props: CodeEditorProps) {
       const effects = [];
       if (editor.props.language !== props.language || editor.props.target !== props.target) {
         effects.push(editor.language.reconfigure(editorLanguage(props.language, props.target)));
+      }
+      if (editor.props.colorScheme !== props.colorScheme) {
+        effects.push(editor.theme.reconfigure(editorTheme(props.colorScheme ?? "light")));
       }
       if (editor.props.readOnly !== props.readOnly || editor.props.ariaLabel !== props.ariaLabel) {
         effects.push(editor.interaction.reconfigure(interaction(props)));

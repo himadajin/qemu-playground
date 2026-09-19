@@ -80,8 +80,8 @@ architecture-specific instruction or register coverage.
 
 The configuration starts with `minimalSetup` and adds line numbers, search and
 replace, bracket matching and closing, and indentation. No completion, diagnostics,
-folding, formatting, or language service is enabled. The light theme uses Geist
-Mono, non-wrapping lines, and independent editor scrolling.
+folding, formatting, or language service is enabled. The editor follows the application
+color scheme, uses Geist Mono, keeps lines unwrapped, and scrolls independently.
 
 The React value controls the document. Editor edits notify `onChange`; matching
 values preserve editing state. A different external value resets undo history,
