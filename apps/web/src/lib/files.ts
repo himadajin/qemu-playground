@@ -19,6 +19,20 @@ export interface FileCollection {
   sidebarOpen: boolean;
 }
 
+/** Apply an order to current files, ignoring removed IDs and appending newly added files. */
+export function reorderFiles(files: ProgramFile[], ids: readonly string[]): ProgramFile[] {
+  const remaining = new Map(files.map((file) => [file.id, file]));
+  const ordered: ProgramFile[] = [];
+  for (const id of ids) {
+    const file = remaining.get(id);
+    if (file) {
+      ordered.push(file);
+      remaining.delete(id);
+    }
+  }
+  return [...ordered, ...remaining.values()];
+}
+
 export function filename(name: string, language: Language): string {
   const stem =
     name

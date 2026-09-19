@@ -44,6 +44,7 @@ import {
   downloadFile,
   loadFiles,
   persistFiles,
+  reorderFiles,
   sameProgram,
   uniqueName,
   type FileCollection,
@@ -282,7 +283,9 @@ export function App() {
       onSelect={select}
       onNew={newFile}
       onImport={(file) => void importSource(file)}
-      onReorder={(files) => setCollection((current) => ({ ...current, files }))}
+      onReorder={(ids) =>
+        setCollection((current) => ({ ...current, files: reorderFiles(current.files, ids) }))
+      }
       onAction={(action, file) => {
         if (action === "rename") setDraft({ mode: "rename", file });
         if (action === "duplicate")

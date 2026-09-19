@@ -4,6 +4,7 @@ import {
   FILE_STORAGE_KEY,
   loadFiles,
   persistFiles,
+  reorderFiles,
   uniqueName,
 } from "../src/lib/files";
 import { saveSnippet, SNIPPET_STORAGE_KEY, type SnippetStorage } from "../src/lib/storage";
@@ -17,6 +18,14 @@ function memory(): SnippetStorage {
   };
 }
 describe("file collection persistence", () => {
+  it("applies an order without restoring removed files or dropping new files", () => {
+    const first = createFile();
+    const second = createFile("asm");
+    const added = createFile();
+    expect(
+      reorderFiles([first, second, added], [second.id, "removed", second.id, first.id]),
+    ).toEqual([second, first, added]);
+  });
   it("creates a sample once and preserves an intentionally empty collection", () => {
     const storage = memory();
     const initial = loadFiles(storage);
