@@ -2,7 +2,7 @@ import type { Language, TargetId } from "@qemu-playground/shared";
 import { Tabs } from "@mantine/core";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ResizableWorkspace } from "./components/ResizableWorkspace";
-import { CodeEditor } from "./components/CodeEditor";
+import { LazyCodeEditor } from "./components/LazyCodeEditor";
 import { ResultPane, type ResultTab } from "./components/ResultPane";
 import { OpenDialog, SaveDialog } from "./components/SnippetDialogs";
 import { Toolbar, type ToolbarNotice } from "./components/Toolbar";
@@ -40,6 +40,7 @@ export function App() {
   const [compileOptions, setCompileOptions] = useState(initial.compileOptions);
 
   const [phase, setPhase] = useState<RunPhase>({ kind: "idle" });
+  const [resultTarget, setResultTarget] = useState<TargetId>(initial.target);
   const [resultTab, setResultTab] = useState<ResultTab>("output");
   const [mainTab, setMainTab] = useState<"code" | "result">("code");
 
@@ -106,6 +107,7 @@ export function App() {
     runInFlight.current = true;
     // The previous result is dropped rather than kept for comparison, so what
     // is on screen always belongs to the code that was just submitted.
+    setResultTarget(target);
     setPhase({ kind: "running" });
     setResultTab("output");
     setMainTab("result");
@@ -183,7 +185,13 @@ export function App() {
   }, []);
 
   const editor = (
-    <CodeEditor value={code} language={language} ariaLabel="Source code" onChange={setCode} />
+    <LazyCodeEditor
+      value={code}
+      language={language}
+      target={target}
+      ariaLabel="Source code"
+      onChange={setCode}
+    />
   );
 
   const result = (
@@ -192,6 +200,7 @@ export function App() {
       tab={displayedResultTab}
       onTabChange={setResultTab}
       language={language}
+      target={resultTarget}
     />
   );
 
@@ -239,7 +248,7 @@ export function App() {
             <Tabs.Tab value="code">Code</Tabs.Tab>
             <Tabs.Tab value="result">Result</Tabs.Tab>
           </Tabs.List>
-          {/* Activity mode cleans up effects when hidden, disposing Monaco and its undo history. */}
+          {/* Keep the hidden source editor mounted, including its editing state and history. */}
           <Tabs.Panel className="workspace__panel" value="code">
             {editor}
           </Tabs.Panel>

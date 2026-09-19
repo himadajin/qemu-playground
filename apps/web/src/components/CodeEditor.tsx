@@ -1,142 +1,117 @@
-import { Skeleton, Stack } from "@mantine/core";
-import type * as Monaco from "monaco-editor/editor/editor.api";
-import { useEffect, useRef, useState } from "react";
-import { ASM_LANGUAGE_ID } from "../editor/asmLanguage";
-import { loadMonaco } from "../editor/monacoLoader";
-import type { MonacoApi } from "../editor/monacoSetup";
-import type { Language } from "@qemu-playground/shared";
+import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
+import { indentWithTab } from "@codemirror/commands";
+import { bracketMatching, indentOnInput, indentUnit } from "@codemirror/language";
+import { search, searchKeymap } from "@codemirror/search";
+import { Compartment, EditorState } from "@codemirror/state";
+import { EditorView, keymap, lineNumbers } from "@codemirror/view";
+import type { Language, TargetId } from "@qemu-playground/shared";
+import { minimalSetup } from "codemirror";
+import { useLayoutEffect, useRef } from "react";
+import { editorLanguage } from "../editor/languages";
+import { editorTheme } from "../editor/theme";
 
-interface CodeEditorProps {
+export interface CodeEditorProps {
   value: string;
   language: Language;
+  target: TargetId;
   readOnly?: boolean;
   ariaLabel: string;
   onChange?: (value: string) => void;
 }
 
-function monacoLanguageId(language: Language): string {
-  return language === "c" ? "c" : ASM_LANGUAGE_ID;
+function interaction({ readOnly = false, ariaLabel }: CodeEditorProps) {
+  return [
+    EditorState.readOnly.of(readOnly),
+    EditorView.editable.of(!readOnly),
+    EditorView.contentAttributes.of({
+      "aria-label": ariaLabel,
+      "aria-readonly": String(readOnly),
+      tabindex: "0",
+    }),
+  ];
 }
 
-const EDITOR_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
-  automaticLayout: true,
-  minimap: { enabled: false },
-  scrollBeyondLastLine: false,
-  fontFamily: '"Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-  fontSize: 13,
-  lineHeight: 20,
-  tabSize: 4,
-  insertSpaces: true,
-  renderWhitespace: "selection",
-  scrollbar: { useShadows: false },
-  overviewRulerBorder: false,
-  padding: { top: 8, bottom: 8 },
-  fixedOverflowWidgets: true,
-  theme: "vs",
-};
+const editing = [
+  keymap.of([...closeBracketsKeymap, ...searchKeymap, indentWithTab]),
+  minimalSetup,
+  lineNumbers(),
+  search({ top: true }),
+  bracketMatching(),
+  closeBrackets(),
+  indentOnInput(),
+  indentUnit.of("    "),
+  EditorState.tabSize.of(4),
+  editorTheme,
+];
 
-/**
- * Monaco wrapper. The shell around it keeps its size from the first paint, so
- * the editor appearing does not move the rest of the layout; only the
- * skeleton inside the shell is swapped out.
- */
-export function CodeEditor({
-  value,
-  language,
-  readOnly = false,
-  ariaLabel,
-  onChange,
-}: CodeEditorProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
-  const monacoRef = useRef<MonacoApi | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
+export function CodeEditor(props: CodeEditorProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const latest = useRef(props);
+  const editorRef = useRef<{
+    view: EditorView;
+    language: Compartment;
+    interaction: Compartment;
+    createState: (props: CodeEditorProps) => EditorState;
+    props: CodeEditorProps;
+  } | null>(null);
 
-  // Read through refs inside the one-shot creation effect so that a value or
-  // language change does not tear the editor down and rebuild it. The sync
-  // runs in an effect (not during render) so only committed renders update
-  // it; nothing reads `latest.current` synchronously during render.
-  const latest = useRef({ value, language, readOnly, onChange });
-  useEffect(() => {
-    latest.current = { value, language, readOnly, onChange };
+  useLayoutEffect(() => {
+    latest.current = props;
   });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    void loadMonaco().then(
-      (monaco) => {
-        const container = containerRef.current;
-        if (cancelled || container === null) {
-          return;
-        }
-        monacoRef.current = monaco;
-        const editor = monaco.editor.create(container, {
-          ...EDITOR_OPTIONS,
-          value: latest.current.value,
-          language: monacoLanguageId(latest.current.language),
-          readOnly: latest.current.readOnly,
-          ariaLabel,
-        });
-        editor.onDidChangeModelContent(() => {
-          latest.current.onChange?.(editor.getValue());
-        });
-        editorRef.current = editor;
-        setStatus("ready");
-      },
-      () => {
-        if (!cancelled) {
-          setStatus("failed");
-        }
-      },
-    );
-
+  useLayoutEffect(() => {
+    const language = new Compartment();
+    const access = new Compartment();
+    const createState = (current: CodeEditorProps) =>
+      EditorState.create({
+        doc: current.value,
+        extensions: [
+          editing,
+          language.of(editorLanguage(current.language, current.target)),
+          access.of(interaction(current)),
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) latest.current.onChange?.(update.state.doc.toString());
+          }),
+        ],
+      });
+    const view = new EditorView({
+      parent: containerRef.current!,
+      state: createState(latest.current),
+    });
+    editorRef.current = {
+      view,
+      language,
+      interaction: access,
+      createState,
+      props: latest.current,
+    };
     return () => {
-      cancelled = true;
-      editorRef.current?.getModel()?.dispose();
-      editorRef.current?.dispose();
+      view.destroy();
       editorRef.current = null;
     };
-  }, [ariaLabel]);
+  }, []);
 
-  useEffect(() => {
-    const editor = editorRef.current;
-    if (editor !== null && editor.getValue() !== value) {
-      editor.setValue(value);
+  useLayoutEffect(() => {
+    const editor = editorRef.current!;
+    const { view } = editor;
+    if (view.state.doc.toString() !== props.value) {
+      // An external replacement starts a new document, without notifying onChange.
+      // setState clears history and selection while keeping the EditorView alive.
+      view.setState(editor.createState(props));
+      view.scrollDOM.scrollTop = 0;
+      view.scrollDOM.scrollLeft = 0;
+    } else {
+      const effects = [];
+      if (editor.props.language !== props.language || editor.props.target !== props.target) {
+        effects.push(editor.language.reconfigure(editorLanguage(props.language, props.target)));
+      }
+      if (editor.props.readOnly !== props.readOnly || editor.props.ariaLabel !== props.ariaLabel) {
+        effects.push(editor.interaction.reconfigure(interaction(props)));
+      }
+      if (effects.length > 0) view.dispatch({ effects });
     }
-  }, [value, status]);
+    editor.props = props;
+  }, [props]);
 
-  useEffect(() => {
-    const monaco = monacoRef.current;
-    const model = editorRef.current?.getModel();
-    if (monaco !== null && model != null) {
-      monaco.editor.setModelLanguage(model, monacoLanguageId(language));
-    }
-  }, [language, status]);
-
-  useEffect(() => {
-    editorRef.current?.updateOptions({ readOnly });
-  }, [readOnly, status]);
-
-  return (
-    <div className="editor-shell" aria-busy={status === "loading"}>
-      <div className="editor-shell__surface" ref={containerRef} />
-      {status !== "ready" && (
-        <div className="editor-shell__overlay">
-          {status === "loading" ? (
-            <Stack gap="sm" w="100%" aria-label="Loading editor" role="status">
-              <Skeleton height={10} width="46%" />
-              <Skeleton height={10} width="32%" />
-              <Skeleton height={10} width="18%" />
-              <Skeleton height={10} width="32%" />
-            </Stack>
-          ) : (
-            <p className="editor-shell__message" role="alert">
-              The editor could not be loaded. Reload the page to try again.
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  return <div className="editor-shell__surface" ref={containerRef} />;
 }

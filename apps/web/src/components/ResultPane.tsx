@@ -1,7 +1,7 @@
-import type { Language } from "@qemu-playground/shared";
+import type { Language, TargetId } from "@qemu-playground/shared";
 import { Badge, Tabs, Text } from "@mantine/core";
 import type { ResultView } from "../lib/runView";
-import { CodeEditor } from "./CodeEditor";
+import { LazyCodeEditor } from "./LazyCodeEditor";
 import { StatusBadge } from "./StatusBadge";
 
 export type ResultTab = "output" | "build" | "assembly";
@@ -11,6 +11,7 @@ interface ResultPaneProps {
   tab: ResultTab;
   onTabChange: (tab: ResultTab) => void;
   language: Language;
+  target: TargetId;
 }
 
 interface LogSectionProps {
@@ -47,7 +48,7 @@ function LogSection({ title, text, truncated, placeholder }: LogSectionProps) {
  * Right-hand pane: one tab per kind of output, with the short status badge in
  * the header. Detail is always the raw log, never a rephrased summary.
  */
-export function ResultPane({ view, tab, onTabChange, language }: ResultPaneProps) {
+export function ResultPane({ view, tab, onTabChange, language, target }: ResultPaneProps) {
   const { output, build, assembly } = view;
 
   return (
@@ -118,9 +119,10 @@ export function ResultPane({ view, tab, onTabChange, language }: ResultPaneProps
               <p className="assembly__flag">Output truncated; the assembly below is incomplete.</p>
             )}
             <div className="assembly__editor">
-              <CodeEditor
+              <LazyCodeEditor
                 value={assembly.code}
                 language="asm"
+                target={target}
                 readOnly
                 ariaLabel="Generated assembly"
               />
