@@ -4,9 +4,13 @@ A single-screen playground for entering code, running it, and inspecting results
 
 ## Layout
 
-- Above 1080px, a collapsible 224px file sidebar sits beside resizable source and result panes.
-  The reopening control remains visible above the workspace. Collapsing the sidebar gives its
-  space to the panes; the open/closed preference is saved in the file collection.
+- Above 1080px, a 44px action rail sits beside resizable source and result panes. It contains
+  icon buttons for toggling the file list, New, and Import. Expanding the list makes the sidebar
+  240px wide in total. Toggling is immediate and leaves the action buttons in place; the
+  open/closed preference is saved in the file collection. Creating or importing a program
+  selects it without changing this preference.
+- Desktop action labels appear in tooltips on hover or keyboard focus, not as persistent text.
+  The expanded list has a Files heading without a count.
 - Source and result panes start at 50:50, with a minimum width of 320px each. Drag the central
   divider, or focus it and use Left/Right arrows to adjust by 16px. The divider has a 12px hit
   area and a visible focus indicator. Neither pane can collapse.
@@ -32,7 +36,7 @@ A single-screen playground for entering code, running it, and inspecting results
   target does not replace source code.
 - Names are unique, with `.c` for C and `.s` for assembly. Renaming preserves language and target.
   Assembly architecture appears separately in the list.
-- New and Import appear at the top of the sidebar. Each file's menu provides Rename, Duplicate,
+- New and Import appear in the desktop action rail or at the top of the mobile drawer. Each file's menu provides Rename, Duplicate,
   Download, Reorder files, and Delete. Duplicate opens the copy with a unique name such as
   `hello-copy.c`, preserving its source and execution settings.
 - Delete asks for confirmation naming the file. A running file cannot be deleted. Deleting

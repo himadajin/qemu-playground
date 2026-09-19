@@ -1,13 +1,23 @@
-import { ActionIcon, Button, Center, Drawer, EmptyState, Group, Tabs, Text } from "@mantine/core";
-import { IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from "@tabler/icons-react";
+import {
+  ActionIcon,
+  Box,
+  Button,
+  Center,
+  Drawer,
+  EmptyState,
+  Flex,
+  Group,
+  Tabs,
+} from "@mantine/core";
+import { IconLayoutSidebarLeftExpand } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { ImportSourceButton } from "./ImportSourceButton";
 import { ResizableWorkspace } from "./ResizableWorkspace";
+import { FileSidebarRail } from "./FileSidebarRail";
 interface Props {
   narrow: boolean;
   sidebarOpen: boolean;
   drawerOpen: boolean;
-  previewSelected: boolean;
   hasActive: boolean;
   mainTab: "code" | "result";
   otherRunningName: string | null;
@@ -25,7 +35,6 @@ export function ProgramLayout({
   narrow,
   sidebarOpen,
   drawerOpen,
-  previewSelected,
   hasActive,
   mainTab,
   otherRunningName,
@@ -41,26 +50,33 @@ export function ProgramLayout({
 }: Props) {
   return (
     <>
-      <div className="workbench">
-        {!narrow && sidebarOpen && <aside className="sidebar">{sidebar}</aside>}
+      <Flex flex={1} mih={0}>
+        {!narrow && (
+          <Flex component="aside" className="sidebar" w={sidebarOpen ? 240 : 44}>
+            <FileSidebarRail
+              opened={sidebarOpen}
+              onToggle={onToggleSidebar}
+              onNew={onNew}
+              onImport={onImport}
+            />
+            <Box id="desktop-files" flex={1} miw={0} hidden={!sidebarOpen}>
+              {sidebarOpen && sidebar}
+            </Box>
+          </Flex>
+        )}
         <div className="workbench__main">
-          <Group className="workbench__navigation" gap={8} py={5} px={12} wrap="nowrap">
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              aria-label={narrow || !sidebarOpen ? "Show files" : "Hide files"}
-              onClick={onToggleSidebar}
-            >
-              {!narrow && sidebarOpen ? (
-                <IconLayoutSidebarLeftCollapse size={18} />
-              ) : (
+          {narrow && (
+            <Group className="workbench__navigation" gap={8} py={5} px={12} wrap="nowrap">
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                aria-label="Show files"
+                onClick={onToggleSidebar}
+              >
                 <IconLayoutSidebarLeftExpand size={18} />
-              )}
-            </ActionIcon>
-            <Text size="xs" c="dimmed">
-              {previewSelected ? "Shared preview" : "Independent programs"}
-            </Text>
-          </Group>
+              </ActionIcon>
+            </Group>
+          )}
           {!hasActive ? (
             <Center component="main" flex={1} p={24}>
               <EmptyState
@@ -109,7 +125,7 @@ export function ProgramLayout({
             <ResizableWorkspace code={editor} result={result} />
           )}
         </div>
-      </div>
+      </Flex>
       <Drawer
         opened={!!narrow && drawerOpen}
         onClose={onCloseDrawer}

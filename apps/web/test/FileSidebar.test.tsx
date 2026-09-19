@@ -20,8 +20,6 @@ function setup() {
     runningId: null,
     preview: null,
     onSelect: vi.fn(),
-    onNew: vi.fn(),
-    onImport: vi.fn(),
     onAction: vi.fn(),
     onReorder: vi.fn<(ids: string[]) => void>(),
   };

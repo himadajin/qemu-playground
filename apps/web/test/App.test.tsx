@@ -386,6 +386,44 @@ describe("playground interactions", () => {
     );
   });
 
+  it("keeps creation and import available while collapsed and remembers the preference", async () => {
+    const user = userEvent.setup();
+    let mounted = mount();
+    const editor = source();
+    await user.click(screen.getByRole("button", { name: "Hide files" }));
+    expect(screen.queryByRole("navigation", { name: "Files" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show files" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    expect(source()).toBe(editor);
+    expect(loadFiles(localStorage).sidebarOpen).toBe(false);
+
+    await user.click(screen.getByRole("button", { name: "New" }));
+    const dialog = screen.getByRole("dialog", { name: "New file" });
+    await user.click(within(dialog).getByRole("button", { name: "New file" }));
+    expect(loadFiles(localStorage).files).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Show files" })).toBeVisible();
+
+    await user.upload(
+      screen.getByLabelText("Import source file"),
+      new File(["int main() { return 7; }"], "imported.c", { type: "text/plain" }),
+    );
+    const importDialog = await screen.findByRole("dialog", { name: "Import source" });
+    await user.click(within(importDialog).getByRole("button", { name: "Import source" }));
+    expect(source()).toHaveValue("int main() { return 7; }");
+    expect(loadFiles(localStorage).sidebarOpen).toBe(false);
+
+    mounted.unmount();
+    mounted = mount();
+    expect(screen.getByRole("button", { name: "Show files" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Show files" }));
+    expect(screen.getByRole("navigation", { name: "Files" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "imported.c" })).toBeVisible();
+    expect(loadFiles(localStorage).sidebarOpen).toBe(true);
+    mounted.unmount();
+  });
+
   it("creates, renames, duplicates, and deletes files, preserving an empty collection", async () => {
     const user = userEvent.setup();
     const mounted = mount();

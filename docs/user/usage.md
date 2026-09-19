@@ -20,7 +20,11 @@ Code lines do not wrap. Scroll horizontally to inspect long lines.
 
 ## Files in this browser
 
-The file sidebar holds independent programs. **New** lets you choose a name and C,
+The file sidebar holds independent programs. On wide screens, its icon buttons let you
+show or hide the list, create a program, and import a source file. Hover over a button
+or focus it with the keyboard to see its label. Hiding the list leaves these buttons
+available and remembers your preference. Creating or importing a program keeps the
+list in its current open or closed state. **New** lets you choose a name and C,
 Assembly (RV64), or Assembly (AArch64); each starts with runnable sample code.
 Language and assembly architecture stay fixed. C files let you change the target
 above the editor. Compiler options are always editable inline.

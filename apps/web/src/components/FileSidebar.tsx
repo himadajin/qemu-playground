@@ -1,7 +1,5 @@
 import { Button, Group, NavLink, Stack, Text, VisuallyHidden } from "@mantine/core";
-import { IconPlus } from "@tabler/icons-react";
-import { useState } from "react";
-import { ImportSourceButton } from "./ImportSourceButton";
+import { useState, type ReactNode } from "react";
 import { FileSidebarItem } from "./FileSidebarItem";
 import type { FileAction } from "./FileActionsMenu";
 import { useFileReorder } from "../hooks/useFileReorder";
@@ -13,8 +11,7 @@ interface Props {
   runningId: string | null;
   preview: ProgramFile | null;
   onSelect: (id: string) => void;
-  onNew: () => void;
-  onImport: (file: File) => void;
+  actions?: ReactNode;
   onAction: (action: FileAction, file: ProgramFile) => void;
   onReorder: (ids: string[]) => void;
 }
@@ -33,25 +30,14 @@ export function FileSidebar(props: Props) {
       className={reorderMode ? "files--reordering" : undefined}
       aria-label="Files"
     >
-      <Group justify="space-between" wrap="nowrap" pt={14} px={16} pb={8}>
-        <Text size="xs" fw={600}>
-          Files
-        </Text>
-        <Text size="xs" c="dimmed">
-          {props.files.length}
-        </Text>
-      </Group>
-      <Group gap={4} wrap="nowrap" px={12} pb={12}>
-        <Button
-          size="xs"
-          variant="default"
-          leftSection={<IconPlus size={14} />}
-          onClick={props.onNew}
-        >
-          New
-        </Button>
-        <ImportSourceButton onImport={props.onImport} />
-      </Group>
+      <Text size="xs" fw={600} pt={14} px={16} pb={8}>
+        Files
+      </Text>
+      {props.actions && (
+        <Group gap={4} wrap="nowrap" px={12} pb={12}>
+          {props.actions}
+        </Group>
+      )}
       {props.preview && (
         <div className="files__preview">
           <NavLink
