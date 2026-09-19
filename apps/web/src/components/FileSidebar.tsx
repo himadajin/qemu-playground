@@ -89,9 +89,6 @@ export function FileSidebar(props: Props) {
           </Button>
         </Group>
       )}
-      <Text py={12} px={16} size="11px" c="dimmed">
-        Saved in this browser
-      </Text>
       <VisuallyHidden role="status">{announcement}</VisuallyHidden>
     </Stack>
   );
