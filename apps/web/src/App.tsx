@@ -6,7 +6,7 @@ import { CodeEditor } from "./components/CodeEditor";
 import { ResultPane, type ResultTab } from "./components/ResultPane";
 import { OpenDialog, SaveDialog } from "./components/SnippetDialogs";
 import { Toolbar, type ToolbarNotice } from "./components/Toolbar";
-import { useMediaQuery } from "./hooks/useMediaQuery";
+import { useClipboard, useMediaQuery } from "@mantine/hooks";
 import { requestRun } from "./lib/runApi";
 import { deriveResultView, type RunPhase } from "./lib/runView";
 import { DEFAULT_LANGUAGE, DEFAULT_TARGET, getSample, isUntouchedSample } from "./lib/samples";
@@ -53,7 +53,13 @@ export function App() {
     save: null,
   });
 
-  const isNarrow = useMediaQuery(NARROW_QUERY);
+  const {
+    copy,
+    copied,
+    error: clipboardError,
+    reset: resetClipboard,
+  } = useClipboard({ timeout: 2000 });
+  const isNarrow = useMediaQuery(NARROW_QUERY, undefined, { getInitialValueInEffect: false });
   const running = phase.kind === "running";
   const runInFlight = useRef(false);
   const view = useMemo(() => deriveResultView(phase, language), [phase, language]);
@@ -62,9 +68,13 @@ export function App() {
     setNotices((current) => ({ ...current, [action]: next }));
   }, []);
 
-  const dismissNotice = useCallback((action: "share" | "save") => {
-    setNotices((current) => ({ ...current, [action]: null }));
-  }, []);
+  const dismissNotice = useCallback(
+    (action: "share" | "save") => {
+      if (action === "share") resetClipboard();
+      setNotices((current) => ({ ...current, [action]: null }));
+    },
+    [resetClipboard],
+  );
 
   // Assembly is meaningless for assembly input, so never display it selected
   // even if it was selected before switching to an asm input.
@@ -118,7 +128,9 @@ export function App() {
     }
   }, [language, target, code, compileOptions]);
 
-  const handleShare = useCallback(async () => {
+  const handleShare = () => {
+    resetClipboard();
+    setNotices((current) => ({ ...current, share: null }));
     const built = buildShareUrl(window.location.href, {
       language,
       target,
@@ -135,16 +147,8 @@ export function App() {
     }
 
     window.history.replaceState(null, "", built.url);
-    try {
-      await navigator.clipboard.writeText(built.url);
-      showNotice("share", { tone: "info", text: "Share URL copied to clipboard." });
-    } catch {
-      showNotice("share", {
-        tone: "error",
-        text: "Could not copy the link. Copy the URL from the address bar.",
-      });
-    }
-  }, [language, target, code, compileOptions, showNotice]);
+    copy(built.url);
+  };
 
   const handleSave = useCallback(
     (name: string) => {
@@ -204,8 +208,20 @@ export function App() {
         onRun={() => void handleRun()}
         onOpen={() => setOpenOpen(true)}
         onSave={() => setSaveOpen(true)}
-        onShare={() => void handleShare()}
-        notices={notices}
+        onShare={handleShare}
+        notices={{
+          save: notices.save,
+          share:
+            notices.share ??
+            (clipboardError
+              ? {
+                  tone: "error",
+                  text: "Could not copy the link. Copy the URL from the address bar.",
+                }
+              : copied
+                ? { tone: "info", text: "Share URL copied to clipboard." }
+                : null),
+        }}
         onDismissNotice={dismissNotice}
       />
 

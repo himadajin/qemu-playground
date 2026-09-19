@@ -31,7 +31,3 @@
 .toolbar__error {
   max-width: calc(100vw - 24px);
 }
-.toolbar__error-text {
-  flex: 1;
-  overflow-wrap: anywhere;
-}

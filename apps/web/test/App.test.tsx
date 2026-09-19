@@ -335,6 +335,21 @@ describe("playground interactions", () => {
     expect(screen.getByRole("button", { name: "Share" })).toHaveFocus();
   });
 
+  it("replaces copy failure with success and clears success on a later failure", async () => {
+    const user = userEvent.setup();
+    const copy = vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("denied"));
+    mount();
+    await user.click(screen.getByRole("button", { name: "Share" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not copy");
+    copy.mockResolvedValueOnce();
+    await user.click(screen.getByRole("button", { name: "Share" }));
+    expect(await screen.findByRole("button", { name: "Copied" })).toBeVisible();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Copied" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not copy");
+    expect(screen.getByRole("button", { name: "Share" })).toBeVisible();
+  });
+
   it("reports clipboard failure and rejects an oversized share URL", async () => {
     const user = userEvent.setup();
     vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("denied"));

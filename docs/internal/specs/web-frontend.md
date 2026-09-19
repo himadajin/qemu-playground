@@ -72,8 +72,8 @@ The labels are `success`, `compile error`, `runtime error`, `timeout`, `running`
   Light mode is fixed; there is no dark-mode control.
 - The centralized theme retains Geist for UI text, Noto Sans JP as its Japanese fallback, and
   Geist Mono for code and logs. Controls use compact standard sizes; code and logs use 13px text.
-- Mantine SegmentedControl, Select, TextInput, Button, Tabs, Modal, Badge, Skeleton, and Splitter provide the
-  common controls. Custom CSS handles playground layout, divider appearance, scrolling, log formatting,
+- Mantine SegmentedControl, Select, TextInput, Button, NavLink, Tabs, Modal, Alert, Badge, Skeleton,
+  and Splitter provide the common controls. Custom CSS handles playground layout, divider appearance, scrolling, log formatting,
   and editor positioning.
 - Monaco widgets are contained in the app's stacking context so that dropdowns and modal portals
   render above them.

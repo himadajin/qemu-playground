@@ -1,24 +1,26 @@
 import { Splitter } from "@mantine/core";
-import { useElementSize } from "@mantine/hooks";
-import { useId, useState, type ReactNode } from "react";
+import { useElementSize, useLocalStorage } from "@mantine/hooks";
+import { useId, type ReactNode } from "react";
 
 const STORAGE_KEY = "qemu-playground:workspace-ratio:v1";
 const MIN_PANE_WIDTH = 320;
 
-function readRatio() {
-  try {
-    const value = Number(window.localStorage.getItem(STORAGE_KEY));
-    if (Number.isFinite(value) && value > 0 && value < 1) return value;
-  } catch {
-    // Resizing remains available when browser storage is blocked.
-  }
-  return 0.5;
+function deserializeRatio(stored: string | undefined) {
+  const value = Number(stored);
+  return Number.isFinite(value) && value > 0 && value < 1 ? value : 0.5;
 }
 
 export function ResizableWorkspace({ code, result }: { code: ReactNode; result: ReactNode }) {
   const { ref, width } = useElementSize();
   const codeId = useId();
-  const [ratio, setRatio] = useState(readRatio);
+  const [ratio, setRatio] = useLocalStorage<number>({
+    key: STORAGE_KEY,
+    defaultValue: 0.5,
+    getInitialValueInEffect: false,
+    sync: false,
+    serialize: String,
+    deserialize: deserializeRatio,
+  });
   // Constrain the rendered split without replacing the user's saved preference.
   const minimum = width > 0 ? Math.min(0.5, MIN_PANE_WIDTH / width) : 0.5;
   const displayedRatio = Math.max(minimum, Math.min(1 - minimum, ratio));
@@ -33,11 +35,6 @@ export function ResizableWorkspace({ code, result }: { code: ReactNode; result: 
         onSizeChange={(sizes) => {
           const next = Number(sizes[0]) / 100;
           setRatio(next);
-          try {
-            window.localStorage.setItem(STORAGE_KEY, String(next));
-          } catch {
-            // Keep resizing usable when preferences cannot be saved.
-          }
         }}
         step="16px"
         shiftStep="16px"

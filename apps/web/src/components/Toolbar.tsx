@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import {
   Button,
-  CloseButton,
+  Alert,
   Group,
   Popover,
   SegmentedControl,
@@ -10,6 +10,7 @@ import {
   TextInput,
   VisuallyHidden,
 } from "@mantine/core";
+import { useTimeout } from "@mantine/hooks";
 import { TARGETS, type Language, type TargetId } from "@qemu-playground/shared";
 
 export interface ToolbarNotice {
@@ -132,11 +133,12 @@ function FeedbackButton({
   const success = notice?.tone === "info";
   const error = notice?.tone === "error";
 
+  const { start, clear } = useTimeout(() => onDismiss(action), 2000);
   useEffect(() => {
-    if (notice?.tone !== "info") return;
-    const timer = setTimeout(() => onDismiss(action), 2000);
-    return () => clearTimeout(timer);
-  }, [notice, action, onDismiss]);
+    if (action !== "save" || notice?.tone !== "info") return;
+    start();
+    return clear;
+  }, [notice, action, start, clear]);
 
   const closeError = () => {
     onDismiss(action);
@@ -179,12 +181,19 @@ function FeedbackButton({
           </Button>
         </Popover.Target>
         <Popover.Dropdown className="toolbar__error">
-          <Group gap="xs" wrap="nowrap" align="flex-start">
-            <Text size="xs" role="alert" className="toolbar__error-text">
-              {error ? notice.text : null}
-            </Text>
-            <CloseButton size="sm" aria-label={`Dismiss ${action} error`} onClick={closeError} />
-          </Group>
+          <Alert
+            variant="transparent"
+            color="red"
+            p={0}
+            withCloseButton
+            closeButtonLabel={`Dismiss ${action} error`}
+            onClose={closeError}
+            styles={{
+              message: { fontSize: "var(--mantine-font-size-xs)", overflowWrap: "anywhere" },
+            }}
+          >
+            {error ? notice.text : null}
+          </Alert>
         </Popover.Dropdown>
       </Popover>
       <VisuallyHidden role="status">{success ? notice.text : ""}</VisuallyHidden>

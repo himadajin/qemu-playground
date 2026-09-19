@@ -6,12 +6,4 @@
 .snippet-list__open {
   flex: 1;
   min-width: 0;
-  height: auto;
-  padding-block: 8px;
-}
-.snippet-list__text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  text-align: left;
 }

@@ -1,5 +1,5 @@
 import { getTargetDefinition } from "@qemu-playground/shared";
-import { Button, CloseButton, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
+import { Button, CloseButton, Group, Modal, NavLink, Stack, Text, TextInput } from "@mantine/core";
 import { useState } from "react";
 import type { SavedSnippet } from "../lib/storage";
 
@@ -99,22 +99,15 @@ export function OpenDialog({ open, onOpenChange, snippets, onSelect, onDelete }:
         <Stack component="ul" gap="xs" className="snippet-list">
           {snippets.map((snippet, index) => (
             <Group component="li" key={snippet.id} gap="xs" wrap="nowrap">
-              <Button
-                variant="default"
+              <NavLink
+                component="button"
                 className="snippet-list__open"
                 data-autofocus={index === 0 || undefined}
                 onClick={() => onSelect(snippet)}
-              >
-                <span className="snippet-list__text">
-                  <Text component="span" size="sm" truncate>
-                    {snippet.name}
-                  </Text>
-                  <Text component="span" size="xs" c="dimmed" truncate>
-                    {LANGUAGE_LABEL[snippet.language]} ·{" "}
-                    {getTargetDefinition(snippet.target).displayName}
-                  </Text>
-                </span>
-              </Button>
+                label={snippet.name}
+                description={`${LANGUAGE_LABEL[snippet.language]} · ${getTargetDefinition(snippet.target).displayName}`}
+                noWrap
+              />
               <CloseButton
                 aria-label={`Delete ${snippet.name}`}
                 onClick={() => onDelete(snippet)}
