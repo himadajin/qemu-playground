@@ -21,20 +21,22 @@ body {
   min-height: 0;
   display: flex;
 }
-.workspace__splitter {
-  flex: 1;
+.resizable-split {
   min-width: 0;
+  min-height: 0;
 }
-.workspace__pane {
+.resizable-split__pane {
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
-.workspace__divider {
+.resizable-split__divider {
   z-index: 1;
 }
 /* Keep a 12px hit area without subtracting space from the splitter's pane sizes. */
-.workspace__divider::before {
+.resizable-split__divider::before {
   content: "";
   position: absolute;
   inset-block: 0;
@@ -42,18 +44,49 @@ body {
   background: linear-gradient(
     to right,
     transparent calc(50% - 0.5px),
-    var(--mantine-color-default-border) calc(50% - 0.5px),
-    var(--mantine-color-default-border) calc(50% + 0.5px),
+    var(--resizable-split-divider-color, var(--mantine-color-default-border)) calc(50% - 0.5px),
+    var(--resizable-split-divider-color, var(--mantine-color-default-border)) calc(50% + 0.5px),
     transparent calc(50% + 0.5px)
   );
 }
-.workspace__divider:hover::before,
-.workspace__divider[data-active]::before {
-  --mantine-color-default-border: var(--mantine-primary-color-filled);
+.resizable-split__divider:where([data-orientation="vertical"])::before {
+  inset-inline: 0;
+  inset-block: auto;
+  width: auto;
+  height: 12px;
+  background: linear-gradient(
+    to bottom,
+    transparent calc(50% - 0.5px),
+    var(--resizable-split-divider-color, var(--mantine-color-default-border)) calc(50% - 0.5px),
+    var(--resizable-split-divider-color, var(--mantine-color-default-border)) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
 }
-.workspace__divider:focus-visible::before {
+.resizable-split__divider:hover,
+.resizable-split__divider[data-active] {
+  --resizable-split-divider-color: var(--mantine-primary-color-filled);
+}
+.resizable-split__divider:focus-visible::before {
   outline: 2px solid var(--mantine-primary-color-filled);
   outline-offset: -2px;
+}
+.workspace__splitter {
+  flex: 1;
+  min-width: 0;
+}
+.program-layout__splitter {
+  flex: 1;
+  min-width: 0;
+}
+.program-layout__sidebar-pane {
+  transition: flex-basis 180ms ease;
+}
+.program-layout__splitter--resizing .program-layout__sidebar-pane {
+  transition: none;
+}
+.program-layout__splitter--collapsed > .resizable-split__divider {
+  visibility: hidden;
+  pointer-events: none;
 }
 .workspace--stacked {
   flex-direction: column;
@@ -91,4 +124,10 @@ body {
   margin: 0;
   font-size: var(--mantine-font-size-sm);
   color: var(--mantine-color-dimmed);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .program-layout__sidebar-pane {
+    transition: none;
+  }
 }

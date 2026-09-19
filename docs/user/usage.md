@@ -21,11 +21,13 @@ Code lines do not wrap. Scroll horizontally to inspect long lines.
 ## Files in this browser
 
 The file sidebar holds independent programs. On wide screens, its icon buttons let you
-show or hide the list, create a program, and import a source file. Expanding the sidebar
-adds labels beside the icons and shows the file list below the actions. When collapsed,
-hover over a button or focus it with the keyboard to see its label. Hiding the list leaves
-these buttons available and remembers your preference. Creating or importing a program keeps the
-list in its current open or closed state. **New file** lets you choose a name and C,
+show or hide the list, create a program, and import a source file. The expanded sidebar
+starts at 240px and can be resized from 160px to 420px by dragging its divider. Its width
+and open/closed preference are saved in this browser. Expanding the sidebar adds labels
+beside the icons and shows the file list below the actions. When collapsed, hover over a
+button or focus it with the keyboard to see its label. Hiding the list leaves these buttons
+available and remembers your preference. Creating or importing a program keeps the list in
+its current open or closed state. **New file** lets you choose a name and C,
 Assembly (RV64), or Assembly (AArch64); each starts with runnable sample code.
 Language and assembly architecture stay fixed. C files let you change the target
 above the editor. Compiler options are always editable inline.

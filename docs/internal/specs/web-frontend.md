@@ -4,9 +4,12 @@ A single-screen playground for entering code, running it, and inspecting results
 
 ## Layout
 
-- Above 1080px, the sidebar is 240px expanded or 44px collapsed beside resizable source
-  and result panes. Collapse sidebar, New file, and Import files are stacked above the
-  Files heading and full-width list. Only the list scrolls; actions stay at the top.
+- Above 1080px, the sidebar starts at 240px expanded and can be resized from 160px to
+  420px, or collapsed to a 44px icon rail, beside resizable source and result panes.
+  Its width is stored under `qemu-playground:sidebar-width:v1`; invalid stored widths
+  are clamped for display without being rewritten until the next resize. Collapse
+  sidebar, New file, and Import files are stacked above the Files heading and full-width
+  list. Only the list scrolls; actions stay at the top.
 - Collapsed actions show icons with hover/focus tooltips. Expanded actions add labels;
   the whole row is clickable. Icon positions stay fixed during the 180ms width and label
   transition. Reduced-motion preferences disable this transition. Hidden files cannot
@@ -15,6 +18,9 @@ A single-screen playground for entering code, running it, and inspecting results
 - Source and result panes start at 50:50, with a minimum width of 320px each. Drag the central
   divider, or focus it and use Left/Right arrows to adjust by 16px. The divider has a 12px hit
   area and a visible focus indicator. Neither pane can collapse.
+- The desktop sidebar divider uses the same 12px hit area and 16px keyboard step. It is
+  available while the sidebar is expanded; collapsing the sidebar preserves its preferred
+  width and restores it on expansion. Double-clicking either divider does not reset its size.
 - The preferred split ratio is stored under `qemu-playground:workspace-ratio:v1`. Viewport
   changes constrain the displayed ratio without replacing the preference.
 - At 1080px or below, a Show files button shares the Code / Result / Run bar. Files open

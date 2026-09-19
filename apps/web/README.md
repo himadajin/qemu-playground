@@ -31,18 +31,20 @@ checks, manual deployment, and infrastructure setup, see
 ## Files and persistence
 
 The sidebar manages independent, single-source programs. Above 1080px, a persistent
-sidebar uses 44px for icons or 240px when expanded. Fixed-position icons gain labels
-above a full-width file list; width and labels transition smoothly with reduced-motion
-support. Collapsed labels appear in hover/focus tooltips. At 1080px or below, a button
-beside Code / Result / Run opens a 280px overlay drawer with the same vertical layout. Files have unique names,
+sidebar uses 44px for icons or starts at 240px when expanded. Drag its divider to choose
+any width from 160px to 420px; the width and labels transition smoothly with reduced-motion
+support, and the width is saved under `qemu-playground:sidebar-width:v1`. Collapsed labels
+appear in hover/focus tooltips. At 1080px or below, a button beside Code / Result / Run
+opens a fixed 280px overlay drawer with the same vertical layout. Files have unique names,
 fixed language and assembly architecture, and per-file compiler options and C target.
 Creation, rename, duplication, deletion, source import/download, and accessible manual
 reordering are supported. There are no folders or multi-file builds.
 
 `lib/files.ts` manages the collection stored automatically under
 `qemu-playground:files:v1`: file records, manual order, last selected saved file,
-and desktop sidebar preference. Files contain ID, name, language, target, code,
-and compiler options. An explicitly empty collection remains empty on reload.
+and desktop sidebar open/closed preference. The independent sidebar width preference
+uses `qemu-playground:sidebar-width:v1`. Files contain ID, name, language, target,
+code, and compiler options. An explicitly empty collection remains empty on reload.
 
 When the new key is absent, `lib/storage.ts` reads legacy
 `qemu-playground:snippets:v1` entries for migration. Normalization and unique suffixes

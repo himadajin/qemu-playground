@@ -1,6 +1,7 @@
-import { Splitter } from "@mantine/core";
 import { useElementSize, useLocalStorage } from "@mantine/hooks";
 import { useId, type ReactNode } from "react";
+import { Splitter } from "@mantine/core";
+import { ResizableSplit } from "./ResizableSplit";
 
 const STORAGE_KEY = "qemu-playground:workspace-ratio:v1";
 const MIN_PANE_WIDTH = 320;
@@ -27,27 +28,17 @@ export function ResizableWorkspace({ code, result }: { code: ReactNode; result: 
 
   return (
     <main className="workspace">
-      <Splitter
+      <ResizableSplit
         ref={ref}
         className="workspace__splitter"
-        classNames={{ pane: "workspace__pane", handle: "workspace__divider" }}
         sizes={[displayedRatio * 100, (1 - displayedRatio) * 100]}
         onSizeChange={(sizes) => {
           const next = Number(sizes[0]) / 100;
           setRatio(next);
         }}
-        step="16px"
-        shiftStep="16px"
-        resetOnDoubleClick={false}
-        withHandle={false}
-        lineSize={0}
-        attributes={{
-          handle: {
-            "aria-label": "Resize code and results",
-            "aria-controls": codeId,
-            "aria-valuetext": `Code ${Math.round(displayedRatio * 100)}%, results ${Math.round((1 - displayedRatio) * 100)}%`,
-          },
-        }}
+        ariaLabel="Resize code and results"
+        ariaControls={codeId}
+        ariaValueText={`Code ${Math.round(displayedRatio * 100)}%, results ${Math.round((1 - displayedRatio) * 100)}%`}
       >
         <Splitter.Pane id={codeId} defaultSize={50} min="320px">
           {code}
@@ -55,7 +46,7 @@ export function ResizableWorkspace({ code, result }: { code: ReactNode; result: 
         <Splitter.Pane defaultSize={50} min="320px">
           {result}
         </Splitter.Pane>
-      </Splitter>
+      </ResizableSplit>
     </main>
   );
 }

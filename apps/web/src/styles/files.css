@@ -9,8 +9,9 @@
 }
 .sidebar {
   overflow: hidden;
-  transition: width 180ms ease;
   flex-shrink: 0;
+}
+.program-layout__splitter--collapsed .sidebar {
   border-right: 1px solid var(--mantine-color-default-border);
 }
 .files__list {
@@ -223,7 +224,8 @@
   transition: opacity 180ms ease;
 }
 .sidebar__files {
-  width: 239px;
+  width: 100%;
+  min-width: 0;
   transition:
     opacity 180ms ease,
     visibility 180ms;
@@ -243,7 +245,6 @@
   margin-left: 6px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .sidebar,
   .sidebar__files,
   .sidebar__label {
     transition: none;
