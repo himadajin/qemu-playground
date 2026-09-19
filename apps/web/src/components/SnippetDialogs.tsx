@@ -1,5 +1,5 @@
 import { getTargetDefinition } from "@qemu-playground/shared";
-import * as Dialog from "@radix-ui/react-dialog";
+import { Button, CloseButton, Group, Modal, NavLink, Stack, Text, TextInput } from "@mantine/core";
 import { useState } from "react";
 import type { SavedSnippet } from "../lib/storage";
 
@@ -33,48 +33,40 @@ export function SaveDialog({ open, onOpenChange, defaultName, onSave }: SaveDial
   const trimmed = name.trim();
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog__overlay" />
-        <Dialog.Content className="dialog__panel dialog__panel--save">
-          <Dialog.Title className="dialog__title">Save snippet</Dialog.Title>
-          <Dialog.Description className="dialog__description">
-            Stored in this browser only. Saving under an existing name replaces it.
-          </Dialog.Description>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (trimmed !== "") {
-                onSave(trimmed);
-              }
-            }}
-          >
-            <input
-              className="dialog__input"
-              type="text"
-              autoFocus
-              placeholder="Snippet name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-            <div className="dialog__actions">
-              <Dialog.Close asChild>
-                <button type="button" className="dialog__button meta-label">
-                  Cancel
-                </button>
-              </Dialog.Close>
-              <button
-                type="submit"
-                className="dialog__button dialog__button--strong meta-label"
-                disabled={trimmed === ""}
-              >
-                Save
-              </button>
-            </div>
-          </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title="Save snippet"
+      size="sm"
+      closeButtonProps={{ "aria-label": "Close save dialog" }}
+    >
+      <Text size="sm" c="dimmed" mb="sm" id="save-description">
+        Stored in this browser only. Saving under an existing name replaces it.
+      </Text>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (trimmed !== "") onSave(trimmed);
+        }}
+      >
+        <TextInput
+          label="Snippet name"
+          data-autofocus
+          placeholder="Snippet name"
+          aria-describedby="save-description"
+          value={name}
+          onChange={(event) => setName(event.currentTarget.value)}
+        />
+        <Group justify="flex-end" mt="md">
+          <Button variant="default" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={trimmed === ""}>
+            Save
+          </Button>
+        </Group>
+      </form>
+    </Modal>
   );
 }
 
@@ -89,54 +81,50 @@ interface OpenDialogProps {
 /** Open lists the saved snippets on demand; there is no permanent file tree. */
 export function OpenDialog({ open, onOpenChange, snippets, onSelect, onDelete }: OpenDialogProps) {
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog__overlay" />
-        <Dialog.Content className="dialog__panel dialog__panel--open">
-          <Dialog.Title className="dialog__title">Open snippet</Dialog.Title>
-          <Dialog.Description className="dialog__description">
-            Saved in this browser.
-          </Dialog.Description>
-
-          {snippets.length === 0 ? (
-            <p className="dialog__empty">Nothing saved yet.</p>
-          ) : (
-            <ul className="snippet-list">
-              {snippets.map((snippet) => (
-                <li key={snippet.id} className="snippet-list__row">
-                  <button
-                    type="button"
-                    className="snippet-list__open"
-                    onClick={() => onSelect(snippet)}
-                  >
-                    <span className="snippet-list__name">{snippet.name}</span>
-                    <span className="snippet-list__meta meta-label">
-                      {LANGUAGE_LABEL[snippet.language]} ·{" "}
-                      {getTargetDefinition(snippet.target).displayName}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className="snippet-list__delete"
-                    aria-label={`Delete ${snippet.name}`}
-                    onClick={() => onDelete(snippet)}
-                  >
-                    <span aria-hidden="true">×</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="dialog__actions">
-            <Dialog.Close asChild>
-              <button type="button" className="dialog__button meta-label">
-                Close
-              </button>
-            </Dialog.Close>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title="Open snippet"
+      size="md"
+      closeButtonProps={{ "aria-label": "Close open dialog" }}
+    >
+      <Text size="sm" c="dimmed" mb="sm">
+        Saved in this browser.
+      </Text>
+      {snippets.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          Nothing saved yet.
+        </Text>
+      ) : (
+        <Stack component="ul" gap="xs" className="snippet-list">
+          {snippets.map((snippet, index) => (
+            <Group component="li" key={snippet.id} gap="xs" wrap="nowrap">
+              <NavLink
+                component="button"
+                className="snippet-list__open"
+                data-autofocus={index === 0 || undefined}
+                onClick={() => onSelect(snippet)}
+                label={snippet.name}
+                description={`${LANGUAGE_LABEL[snippet.language]} · ${getTargetDefinition(snippet.target).displayName}`}
+                noWrap
+              />
+              <CloseButton
+                aria-label={`Delete ${snippet.name}`}
+                onClick={() => onDelete(snippet)}
+              />
+            </Group>
+          ))}
+        </Stack>
+      )}
+      <Group justify="flex-end" mt="md">
+        <Button
+          variant="default"
+          data-autofocus={snippets.length === 0 || undefined}
+          onClick={() => onOpenChange(false)}
+        >
+          Close
+        </Button>
+      </Group>
+    </Modal>
   );
 }

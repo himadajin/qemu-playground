@@ -1,3 +1,4 @@
+import { Skeleton, Stack } from "@mantine/core";
 import type * as Monaco from "monaco-editor/editor/editor.api";
 import { useEffect, useRef, useState } from "react";
 import { ASM_LANGUAGE_ID } from "../editor/asmLanguage";
@@ -118,19 +119,19 @@ export function CodeEditor({
   }, [readOnly, status]);
 
   return (
-    <div className="editor-shell">
+    <div className="editor-shell" aria-busy={status === "loading"}>
       <div className="editor-shell__surface" ref={containerRef} />
       {status !== "ready" && (
-        <div className="editor-shell__overlay" aria-hidden="true">
+        <div className="editor-shell__overlay">
           {status === "loading" ? (
-            <div className="editor-skeleton">
-              <span className="editor-skeleton__line editor-skeleton__line--lg" />
-              <span className="editor-skeleton__line editor-skeleton__line--md" />
-              <span className="editor-skeleton__line editor-skeleton__line--sm" />
-              <span className="editor-skeleton__line editor-skeleton__line--md" />
-            </div>
+            <Stack gap="sm" w="100%" aria-label="Loading editor" role="status">
+              <Skeleton height={10} width="46%" />
+              <Skeleton height={10} width="32%" />
+              <Skeleton height={10} width="18%" />
+              <Skeleton height={10} width="32%" />
+            </Stack>
           ) : (
-            <p className="editor-shell__message">
+            <p className="editor-shell__message" role="alert">
               The editor could not be loaded. Reload the page to try again.
             </p>
           )}

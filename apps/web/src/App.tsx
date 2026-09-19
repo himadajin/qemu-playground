@@ -1,11 +1,12 @@
 import type { Language, TargetId } from "@qemu-playground/shared";
-import * as Tabs from "@radix-ui/react-tabs";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Tabs } from "@mantine/core";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { ResizableWorkspace } from "./components/ResizableWorkspace";
 import { CodeEditor } from "./components/CodeEditor";
 import { ResultPane, type ResultTab } from "./components/ResultPane";
 import { OpenDialog, SaveDialog } from "./components/SnippetDialogs";
 import { Toolbar, type ToolbarNotice } from "./components/Toolbar";
-import { useMediaQuery } from "./hooks/useMediaQuery";
+import { useClipboard, useMediaQuery } from "@mantine/hooks";
 import { requestRun } from "./lib/runApi";
 import { deriveResultView, type RunPhase } from "./lib/runView";
 import { DEFAULT_LANGUAGE, DEFAULT_TARGET, getSample, isUntouchedSample } from "./lib/samples";
@@ -13,7 +14,6 @@ import { buildShareUrl, readShareStateFromHash, type ShareState } from "./lib/sh
 import { deleteSnippet, loadSnippets, saveSnippet, type SavedSnippet } from "./lib/storage";
 
 const NARROW_QUERY = "(max-width: 900px)";
-const NOTICE_TIMEOUT_MS = 5000;
 
 /** Share URLs restore the form; they never start a Run on their own (design.md). */
 function initialState(): ShareState {
@@ -48,28 +48,32 @@ export function App() {
   const [openOpen, setOpenOpen] = useState(false);
   const [snippetName, setSnippetName] = useState("");
 
-  const [notice, setNotice] = useState<ToolbarNotice | null>(null);
-  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [notices, setNotices] = useState<Record<"share" | "save", ToolbarNotice | null>>({
+    share: null,
+    save: null,
+  });
 
-  const isNarrow = useMediaQuery(NARROW_QUERY);
+  const {
+    copy,
+    copied,
+    error: clipboardError,
+    reset: resetClipboard,
+  } = useClipboard({ timeout: 2000 });
+  const isNarrow = useMediaQuery(NARROW_QUERY, undefined, { getInitialValueInEffect: false });
   const running = phase.kind === "running";
+  const runInFlight = useRef(false);
   const view = useMemo(() => deriveResultView(phase, language), [phase, language]);
 
-  const showNotice = useCallback((next: ToolbarNotice) => {
-    setNotice(next);
-    if (noticeTimer.current !== null) {
-      clearTimeout(noticeTimer.current);
-    }
-    noticeTimer.current = setTimeout(() => setNotice(null), NOTICE_TIMEOUT_MS);
+  const showNotice = useCallback((action: "share" | "save", next: ToolbarNotice) => {
+    setNotices((current) => ({ ...current, [action]: next }));
   }, []);
 
-  useEffect(
-    () => () => {
-      if (noticeTimer.current !== null) {
-        clearTimeout(noticeTimer.current);
-      }
+  const dismissNotice = useCallback(
+    (action: "share" | "save") => {
+      if (action === "share") resetClipboard();
+      setNotices((current) => ({ ...current, [action]: null }));
     },
-    [],
+    [resetClipboard],
   );
 
   // Assembly is meaningless for assembly input, so never display it selected
@@ -98,27 +102,35 @@ export function App() {
   );
 
   const handleRun = useCallback(async () => {
+    if (runInFlight.current) return;
+    runInFlight.current = true;
     // The previous result is dropped rather than kept for comparison, so what
     // is on screen always belongs to the code that was just submitted.
     setPhase({ kind: "running" });
     setResultTab("output");
     setMainTab("result");
 
-    const outcome = await requestRun({
-      language,
-      target,
-      code,
-      compileOptions,
-    });
+    try {
+      const outcome = await requestRun({
+        language,
+        target,
+        code,
+        compileOptions,
+      });
 
-    setPhase(
-      outcome.ok
-        ? { kind: "result", result: outcome.result }
-        : { kind: "failed", message: outcome.message },
-    );
+      setPhase(
+        outcome.ok
+          ? { kind: "result", result: outcome.result }
+          : { kind: "failed", message: outcome.message },
+      );
+    } finally {
+      runInFlight.current = false;
+    }
   }, [language, target, code, compileOptions]);
 
-  const handleShare = useCallback(async () => {
+  const handleShare = () => {
+    resetClipboard();
+    setNotices((current) => ({ ...current, share: null }));
     const built = buildShareUrl(window.location.href, {
       language,
       target,
@@ -127,7 +139,7 @@ export function App() {
     });
 
     if (!built.ok) {
-      showNotice({
+      showNotice("share", {
         tone: "error",
         text: `Too long to share: ${built.length} of ${built.limit} characters. Shorten the code.`,
       });
@@ -135,16 +147,8 @@ export function App() {
     }
 
     window.history.replaceState(null, "", built.url);
-    try {
-      await navigator.clipboard.writeText(built.url);
-      showNotice({ tone: "info", text: "Share URL copied to clipboard." });
-    } catch {
-      showNotice({
-        tone: "error",
-        text: "Could not copy; the share URL is in the address bar.",
-      });
-    }
-  }, [language, target, code, compileOptions, showNotice]);
+    copy(built.url);
+  };
 
   const handleSave = useCallback(
     (name: string) => {
@@ -159,7 +163,7 @@ export function App() {
       );
       setSnippetName(name);
       setSaveOpen(false);
-      showNotice({ tone: "info", text: `Saved “${name}”.` });
+      showNotice("save", { tone: "info", text: `Saved “${name}”.` });
     },
     [language, target, code, compileOptions, showNotice],
   );
@@ -204,39 +208,47 @@ export function App() {
         onRun={() => void handleRun()}
         onOpen={() => setOpenOpen(true)}
         onSave={() => setSaveOpen(true)}
-        onShare={() => void handleShare()}
-        notice={notice}
+        onShare={handleShare}
+        notices={{
+          save: notices.save,
+          share:
+            notices.share ??
+            (clipboardError
+              ? {
+                  tone: "error",
+                  text: "Could not copy the link. Copy the URL from the address bar.",
+                }
+              : copied
+                ? { tone: "info", text: "Share URL copied to clipboard." }
+                : null),
+        }}
+        onDismissNotice={dismissNotice}
       />
 
       {isNarrow ? (
-        <Tabs.Root
+        <Tabs
           className="workspace workspace--stacked"
           value={mainTab}
-          onValueChange={(value) => setMainTab(value as "code" | "result")}
+          onChange={(value) => {
+            if (value !== null) setMainTab(value as "code" | "result");
+          }}
+          keepMounted
+          keepMountedMode="display-none"
         >
-          <Tabs.List className="workspace__switch">
-            <Tabs.Trigger className="tab meta-label" value="code">
-              Code
-            </Tabs.Trigger>
-            <Tabs.Trigger className="tab meta-label" value="result">
-              Result
-            </Tabs.Trigger>
+          <Tabs.List className="workspace__switch" aria-label="Workspace">
+            <Tabs.Tab value="code">Code</Tabs.Tab>
+            <Tabs.Tab value="result">Result</Tabs.Tab>
           </Tabs.List>
-          {/* forceMount keeps the editor alive across switches; the headless
-              primitive leaves both panels mounted and visible, so the inactive
-              one is hidden by CSS on [data-state="inactive"]. */}
-          <Tabs.Content className="workspace__panel" value="code" forceMount>
+          {/* Activity mode cleans up effects when hidden, disposing Monaco and its undo history. */}
+          <Tabs.Panel className="workspace__panel" value="code">
             {editor}
-          </Tabs.Content>
-          <Tabs.Content className="workspace__panel" value="result" forceMount>
+          </Tabs.Panel>
+          <Tabs.Panel className="workspace__panel" value="result">
             {result}
-          </Tabs.Content>
-        </Tabs.Root>
+          </Tabs.Panel>
+        </Tabs>
       ) : (
-        <main className="workspace">
-          <div className="workspace__pane">{editor}</div>
-          <div className="workspace__pane">{result}</div>
-        </main>
+        <ResizableWorkspace code={editor} result={result} />
       )}
 
       <SaveDialog
