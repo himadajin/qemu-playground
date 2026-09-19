@@ -1,149 +1,55 @@
-import { useEffect, useRef } from "react";
-import {
-  Button,
-  Alert,
-  Group,
-  Popover,
-  SegmentedControl,
-  Select,
-  Text,
-  TextInput,
-  VisuallyHidden,
-} from "@mantine/core";
-import { useTimeout } from "@mantine/hooks";
-import { TARGETS, type Language, type TargetId } from "@qemu-playground/shared";
+import { useRef } from "react";
+import { Button, Alert, Group, Popover, Text, VisuallyHidden } from "@mantine/core";
 import { ThemeMenu } from "./ThemeMenu";
-
 export interface ToolbarNotice {
   tone: "info" | "error";
   text: string;
 }
-
-interface ToolbarProps {
-  language: Language;
-  onLanguageChange: (language: Language) => void;
-  target: TargetId;
-  onTargetChange: (target: TargetId) => void;
-  compileOptions: string;
-  onCompileOptionsChange: (value: string) => void;
-  running: boolean;
-  onRun: () => void;
-  onOpen: () => void;
-  onSave: () => void;
-  onShare: () => void;
-  notices: Record<"share" | "save", ToolbarNotice | null>;
-  onDismissNotice: (action: "share" | "save") => void;
-}
-
 export function Toolbar({
-  language,
-  onLanguageChange,
-  target,
-  onTargetChange,
-  compileOptions,
-  onCompileOptionsChange,
-  running,
-  onRun,
-  onOpen,
-  onSave,
   onShare,
-  notices,
-  onDismissNotice,
-}: ToolbarProps) {
+  notice,
+  onDismiss,
+  disabled,
+}: {
+  onShare: () => void;
+  notice: ToolbarNotice | null;
+  onDismiss: () => void;
+  disabled: boolean;
+}) {
   return (
     <header className="toolbar">
       <Text fw={600} size="sm" className="toolbar__brand">
         QEMU Playground
       </Text>
-      <SegmentedControl
-        size="xs"
-        aria-label="Language"
-        value={language}
-        onChange={(value) => onLanguageChange(value)}
-        data={[
-          { value: "c", label: "C" },
-          { value: "asm", label: "Assembly" },
-        ]}
-      />
-      <Select
-        size="xs"
-        className="toolbar__target"
-        aria-label="Target"
-        value={target}
-        allowDeselect={false}
-        data={TARGETS.map(({ id, displayName }) => ({ value: id, label: displayName }))}
-        onChange={(value) => {
-          if (value !== null) onTargetChange(value);
-        }}
-      />
-      <TextInput
-        size="xs"
-        className="toolbar__options"
-        placeholder="-O2"
-        spellCheck={false}
-        autoComplete="off"
-        aria-label="Compile options"
-        value={compileOptions}
-        onChange={(event) => onCompileOptionsChange(event.currentTarget.value)}
-      />
-      <Button
-        size="xs"
-        onClick={onRun}
-        loading={running}
-        disabled={running}
-        aria-label={running ? "Running" : "Run"}
-        aria-busy={running}
-      >
-        {running ? "Running" : "Run"}
-      </Button>
       <Group gap="xs" className="toolbar__actions">
-        <Button size="xs" variant="default" onClick={onOpen}>
-          Open
-        </Button>
         <FeedbackButton
-          action="save"
-          onClick={onSave}
-          notice={notices.save}
-          onDismiss={onDismissNotice}
-        />
-        <FeedbackButton
-          action="share"
           onClick={onShare}
-          notice={notices.share}
-          onDismiss={onDismissNotice}
+          notice={notice}
+          onDismiss={onDismiss}
+          disabled={disabled}
         />
         <ThemeMenu />
       </Group>
     </header>
   );
 }
-
 function FeedbackButton({
-  action,
+  disabled,
   onClick,
   notice,
   onDismiss,
 }: {
-  action: "share" | "save";
+  disabled?: boolean;
   onClick: () => void;
   notice: ToolbarNotice | null;
-  onDismiss: (action: "share" | "save") => void;
+  onDismiss: () => void;
 }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const label = action === "share" ? "Share" : "Save";
-  const successLabel = action === "share" ? "Copied" : "Saved";
   const success = notice?.tone === "info";
   const error = notice?.tone === "error";
 
-  const { start, clear } = useTimeout(() => onDismiss(action), 2000);
-  useEffect(() => {
-    if (action !== "save" || notice?.tone !== "info") return;
-    start();
-    return clear;
-  }, [notice, action, start, clear]);
-
   const closeError = () => {
-    onDismiss(action);
+    onDismiss();
     buttonRef.current?.focus();
   };
 
@@ -162,6 +68,7 @@ function FeedbackButton({
       >
         <Popover.Target>
           <Button
+            disabled={disabled}
             ref={buttonRef}
             size="xs"
             variant="default"
@@ -174,10 +81,10 @@ function FeedbackButton({
             }}
           >
             <span className="toolbar__feedback-label">
-              <span style={{ visibility: success ? "hidden" : "visible" }}>{label}</span>
+              <span style={{ visibility: success ? "hidden" : "visible" }}>Share</span>
               <span style={{ visibility: success ? "visible" : "hidden" }}>
                 <span aria-hidden="true">✓ </span>
-                {successLabel}
+                Copied
               </span>
             </span>
           </Button>
@@ -188,7 +95,7 @@ function FeedbackButton({
             color="red"
             p={0}
             withCloseButton
-            closeButtonLabel={`Dismiss ${action} error`}
+            closeButtonLabel="Dismiss share error"
             onClose={closeError}
             styles={{
               message: { fontSize: "var(--mantine-font-size-xs)", overflowWrap: "anywhere" },

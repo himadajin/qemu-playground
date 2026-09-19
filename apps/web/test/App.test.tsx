@@ -15,7 +15,8 @@ import {
 } from "../src/lib/colorSchemeConfig";
 import { getSample } from "../src/lib/samples";
 import { buildShareUrl } from "../src/lib/share";
-import { loadSnippets, saveSnippet } from "../src/lib/storage";
+import { saveSnippet } from "../src/lib/storage";
+import { loadFiles } from "../src/lib/files";
 import { theme } from "../src/theme";
 
 // Replace only the editor engine: the real app, controls, protocol, and storage run together.
@@ -229,26 +230,22 @@ describe("playground interactions", () => {
     );
   });
 
-  it("changes untouched samples with keyboard controls, preserves edits, and keeps a target selected", async () => {
+  it("edits target and options inline without replacing source", async () => {
     const user = userEvent.setup();
     mount();
     expect(source()).toHaveValue(getSample("c", "rv64"));
-    await user.click(screen.getByRole("radio", { name: "C" }));
-    await user.keyboard("{ArrowRight}");
-    expect(source()).toHaveValue(getSample("asm", "rv64"));
-    const target = screen.getByRole("combobox", { name: "Target" });
-    await user.click(target);
-    await user.keyboard("{ArrowDown}{Enter}");
-    expect(source()).toHaveValue(getSample("asm", "aarch64"));
     fireEvent.change(source(), { target: { value: "user edits" } });
-    await user.click(screen.getByRole("radio", { name: "C" }));
-    await user.click(target);
-    await user.click(screen.getByRole("option", { name: /RV64/ }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Target" }), "aarch64");
+    await user.type(screen.getByRole("textbox", { name: "Compile options" }), "-O2");
     expect(source()).toHaveValue("user edits");
-    expect(target).not.toHaveValue("");
+    expect(loadFiles(localStorage).files[0]).toMatchObject({
+      target: "aarch64",
+      compileOptions: "-O2",
+      code: "user edits",
+    });
   });
 
-  it("replaces results while running, prevents duplicate requests, and lazily shows read-only assembly", async () => {
+  it("retains results while running, prevents duplicate requests, and lazily shows read-only assembly", async () => {
     const user = userEvent.setup();
     mount();
     await user.click(screen.getByRole("button", { name: "Run" }));
@@ -276,9 +273,9 @@ describe("playground interactions", () => {
       run.click();
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(screen.getByRole("button", { name: "Running" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Running…" })).toBeDisabled();
     expect(screen.getByRole("tab", { name: "Output" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.queryByText("hello result")).not.toBeInTheDocument();
+    expect(screen.getByText("hello result")).toBeVisible();
     expect(screen.queryByRole("textbox", { name: "Generated assembly" })).not.toBeInTheDocument();
     await act(async () => {
       finish(response({ error: { code: "capacity_exceeded", message: "too busy" } }, 429));
@@ -286,8 +283,6 @@ describe("playground interactions", () => {
     });
     expect(await screen.findByText(/too busy/)).toBeVisible();
     expect(screen.getByRole("button", { name: "Run" })).toBeEnabled();
-    await user.click(screen.getByRole("radio", { name: "Assembly" }));
-    expect(screen.getByRole("tab", { name: "Assembly" })).toBeDisabled();
   });
 
   it.each([
@@ -334,7 +329,7 @@ describe("playground interactions", () => {
 
   it("retains the source editor across narrow tabs and switches to Result on Run", async () => {
     matchMediaMock.mockImplementation((query: string) => ({
-      matches: query === "(max-width: 900px)",
+      matches: query === "(max-width: 1080px)",
       media: query,
       onchange: null,
       addListener: vi.fn(),
@@ -370,8 +365,7 @@ describe("playground interactions", () => {
     const user = userEvent.setup();
     mount();
     await user.click(screen.getByRole("button", { name: "Run" }));
-    await user.click(screen.getByRole("combobox", { name: "Target" }));
-    await user.click(screen.getByRole("option", { name: /AArch64/ }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Target" }), "aarch64");
     expect(source()).toHaveAttribute("data-target", "aarch64");
     await act(async () => {
       finish(response(result));
@@ -392,37 +386,42 @@ describe("playground interactions", () => {
     );
   });
 
-  it("saves, overwrites, opens and deletes existing snippets with named dialogs", async () => {
+  it("creates, renames, duplicates, and deletes files, preserving an empty collection", async () => {
     const user = userEvent.setup();
+    const mounted = mount();
+    await user.click(screen.getByRole("button", { name: "New" }));
+    let dialog = screen.getByRole("dialog", { name: "New file" });
+    await user.clear(within(dialog).getByLabelText("Filename"));
+    await user.type(within(dialog).getByLabelText("Filename"), "startup");
+    await user.selectOptions(within(dialog).getByLabelText("Program type"), "aarch64");
+    await user.click(within(dialog).getByRole("button", { name: "New file" }));
+    expect(source()).toHaveValue(getSample("asm", "aarch64"));
+    expect(screen.queryByRole("combobox", { name: "Target" })).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Assembly" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Actions for startup.s" }));
+    await user.click(screen.getByRole("menuitem", { name: "Rename" }));
+    dialog = screen.getByRole("dialog", { name: "Rename file" });
+    await user.clear(within(dialog).getByLabelText("Filename"));
+    await user.type(within(dialog).getByLabelText("Filename"), "entry{Enter}");
+    await user.click(screen.getByRole("button", { name: "Actions for entry.s" }));
+    await user.click(screen.getByRole("menuitem", { name: "Duplicate" }));
+    expect(loadFiles(localStorage).files.map((f) => f.name)).toEqual([
+      "hello.c",
+      "entry.s",
+      "entry-copy.s",
+    ]);
+    for (const name of ["entry-copy.s", "entry.s", "hello.c"]) {
+      await user.click(screen.getByRole("button", { name: `Actions for ${name}` }));
+      await user.click(screen.getByRole("menuitem", { name: "Delete" }));
+      dialog = screen.getByRole("dialog", { name: "Delete file" });
+      expect(within(dialog).getByText(`Delete “${name}”? This cannot be undone.`)).toBeVisible();
+      await user.click(within(dialog).getByRole("button", { name: "Delete" }));
+    }
+    expect(screen.getByText("Start with a program")).toBeVisible();
+    mounted.unmount();
     mount();
-    await user.click(screen.getByRole("button", { name: "Save" }));
-    let dialog = screen.getByRole("dialog", { name: "Save snippet" });
-    expect(within(dialog).getByRole("button", { name: "Close save dialog" })).toBeEnabled();
-    expect(within(dialog).getByRole("button", { name: "Save" })).toBeDisabled();
-    const name = within(dialog).getByRole("textbox", { name: "Snippet name" });
-    await waitFor(() => expect(name).toHaveFocus());
-    await user.type(name, "demo{Enter}");
-    expect(loadSnippets(localStorage)).toHaveLength(1);
-    fireEvent.change(source(), { target: { value: "updated source" } });
-    expect(screen.getByRole("button", { name: "Saved" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Saved" }));
-    dialog = screen.getByRole("dialog", { name: "Save snippet" });
-    expect(within(dialog).getByRole("textbox", { name: "Snippet name" })).toHaveValue("demo");
-    await user.click(within(dialog).getByRole("button", { name: "Save" }));
-    expect(loadSnippets(localStorage)).toHaveLength(1);
-    expect(loadSnippets(localStorage)[0]?.code).toBe("updated source");
-    fireEvent.change(source(), { target: { value: "other" } });
-    await user.click(screen.getByRole("button", { name: "Open" }));
-    const item = screen.getByRole("button", { name: /demo.*C/ });
-    await waitFor(() => expect(item).toHaveFocus());
-    await user.click(item);
-    expect(source()).toHaveValue("updated source");
-    await user.click(screen.getByRole("button", { name: "Open" }));
-    await user.click(screen.getByRole("button", { name: "Delete demo" }));
-    expect(screen.getByText("Nothing saved yet.")).toBeVisible();
-    expect(loadSnippets(localStorage)).toHaveLength(0);
-    await user.keyboard("{Escape}");
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByText("Start with a program")).toBeVisible();
+    expect(loadFiles(localStorage).files).toEqual([]);
   });
 
   it("restores old share URLs and saved snippets without automatically running", async () => {
@@ -441,10 +440,166 @@ describe("playground interactions", () => {
     expect(source()).toHaveValue("shared code");
     expect(screen.getByRole("textbox", { name: "Compile options" })).toHaveValue("-O2");
     expect(fetchMock).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "Open" }));
-    await user.click(screen.getByRole("button", { name: /existing.*Assembly/ }));
+    await user.click(screen.getByTitle("existing.s"));
     expect(source()).toHaveValue("saved code");
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("owns late results by file, blocks overlapping runs, and restores selection after reload", async () => {
+    saveSnippet(localStorage, {
+      name: "other",
+      language: "c",
+      target: "aarch64",
+      code: "other source",
+      compileOptions: "-O3",
+    });
+    saveSnippet(
+      localStorage,
+      { name: "first", language: "c", target: "rv64", code: "first source", compileOptions: "" },
+      new Date("2099-01-01"),
+    );
+    let finish!: (value: Response) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    const mounted = mount();
+    await user.click(screen.getByRole("button", { name: "Run" }));
+    await user.click(screen.getByRole("button", { name: "Actions for first.c" }));
+    expect(screen.getByRole("menuitem", { name: "Delete" })).toBeDisabled();
+    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("button", { name: "other.c" }));
+    expect(source()).toHaveValue("other source");
+    expect(screen.getByRole("button", { name: "Run" })).toBeDisabled();
+    expect(screen.getByText("Running first.c…")).toBeVisible();
+    await act(async () => {
+      finish(response(result));
+      await Promise.resolve();
+    });
+    expect(screen.queryByText("hello result")).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toMatchObject({
+      code: "first source",
+      target: "rv64",
+    });
+    await user.click(screen.getByRole("button", { name: "first.c" }));
+    expect(screen.getByText("hello result")).toBeVisible();
+    fireEvent.change(source(), { target: { value: "changed" } });
+    expect(screen.getByText(/Out of date/)).toBeVisible();
+    fireEvent.change(source(), { target: { value: "first source" } });
+    expect(screen.queryByText(/Out of date/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "other.c" }));
+    mounted.unmount();
+    mount();
+    expect(source()).toHaveValue("other source");
+    expect(screen.getByRole("textbox", { name: "Compile options" })).toHaveValue("-O3");
+    await user.click(screen.getByRole("button", { name: "first.c" }));
+    expect(screen.queryByText("hello result")).not.toBeInTheDocument();
+  });
+
+  it("keeps a shared preview separate and transfers its in-flight result when added", async () => {
+    const shared = {
+      language: "c" as const,
+      target: "rv64" as const,
+      code: "shared source",
+      compileOptions: "-O2",
+    };
+    const url = buildShareUrl(window.location.href, shared);
+    if (!url.ok) throw new Error("fixture");
+    window.history.replaceState(null, "", url.url);
+    let finish!: (value: Response) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    mount();
+    fireEvent.change(source(), { target: { value: "edited preview" } });
+    expect(loadFiles(localStorage).files).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "hello.c" }));
+    expect(source()).toHaveValue(getSample("c", "rv64"));
+    await user.click(screen.getByRole("button", { name: "Shared preview" }));
+    expect(source()).toHaveValue("edited preview");
+    await user.click(screen.getByRole("button", { name: "Run" }));
+    expect(screen.getByRole("button", { name: "Close preview" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Add to files" }));
+    const dialog = screen.getByRole("dialog", { name: "Add to files" });
+    await user.click(within(dialog).getByRole("button", { name: "Add to files" }));
+    expect(screen.queryByText("Not saved in your files")).not.toBeInTheDocument();
+    expect(loadFiles(localStorage).files.at(-1)).toMatchObject({
+      name: "shared.c",
+      code: "edited preview",
+      compileOptions: "-O2",
+    });
+    expect(window.location.hash).toBe("");
+    await act(async () => {
+      finish(response(result));
+      await Promise.resolve();
+    });
+    expect(screen.getByText("hello result")).toBeVisible();
+  });
+
+  it("asks before discarding an edited preview without adding it", async () => {
+    const url = buildShareUrl(window.location.href, {
+      language: "c",
+      target: "rv64",
+      code: "shared",
+      compileOptions: "",
+    });
+    if (!url.ok) throw new Error("fixture");
+    window.history.replaceState(null, "", url.url);
+    const user = userEvent.setup();
+    mount();
+    fireEvent.change(source(), { target: { value: "changed" } });
+    await user.click(screen.getByRole("button", { name: "Close preview" }));
+    await user.click(screen.getByRole("button", { name: "Keep editing" }));
+    expect(source()).toHaveValue("changed");
+    await user.click(screen.getByRole("button", { name: "Close preview" }));
+    await user.click(screen.getByRole("button", { name: "Discard preview" }));
+    expect(source()).toHaveValue(getSample("c", "rv64"));
+    expect(loadFiles(localStorage).files).toHaveLength(1);
+  });
+
+  it("reorders with the keyboard, cancels a move, and persists the committed order", async () => {
+    const user = userEvent.setup();
+    mount();
+    await user.click(screen.getByRole("button", { name: "Actions for hello.c" }));
+    await user.click(screen.getByRole("menuitem", { name: "Duplicate" }));
+    const handle = screen.getByRole("button", { name: "Reorder hello-copy.c" });
+    act(() => handle.focus());
+    await user.keyboard(" {ArrowUp}{Escape}");
+    expect(loadFiles(localStorage).files.map((f) => f.name)).toEqual(["hello.c", "hello-copy.c"]);
+    act(() => handle.focus());
+    await user.keyboard(" {ArrowUp} ");
+    expect(loadFiles(localStorage).files.map((f) => f.name)).toEqual(["hello-copy.c", "hello.c"]);
+  });
+
+  it("imports an assembly copy only after choosing its architecture", async () => {
+    const user = userEvent.setup();
+    mount();
+    const file = new File(["ret"], "example.s", { type: "text/plain" });
+    Object.defineProperty(file, "text", { value: () => Promise.resolve("ret") });
+    await user.upload(screen.getByLabelText("Import source file"), file);
+    const dialog = await screen.findByRole("dialog", { name: "Import source" });
+    expect(within(dialog).getByRole("combobox", { name: "Assembly architecture" })).toHaveValue("");
+    await user.click(within(dialog).getByRole("button", { name: "Import source" }));
+    expect(loadFiles(localStorage).files).toHaveLength(1);
+    await user.selectOptions(
+      within(dialog).getByRole("combobox", { name: "Assembly architecture" }),
+      "aarch64",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Import source" }));
+    expect(source()).toHaveValue("ret");
+    expect(loadFiles(localStorage).files.at(-1)).toMatchObject({
+      name: "example.s",
+      language: "asm",
+      target: "aarch64",
+    });
   });
 
   it("confirms copying in the button and resets feedback two seconds after the latest copy", async () => {

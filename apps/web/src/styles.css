@@ -3,4 +3,5 @@
 @import "./styles/toolbar.css";
 @import "./styles/workspace.css";
 @import "./styles/result.css";
-@import "./styles/dialogs.css";
+
+@import "./styles/files.css";

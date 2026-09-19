@@ -4,50 +4,70 @@ A single-screen playground for entering code, running it, and inspecting results
 
 ## Layout
 
-- Above 900px, a compact toolbar sits above two resizable panes: source code on the left
-  and results on the right. The workspace fills the available viewport height; panes scroll
-  independently rather than extending the entire page.
-- Desktop panes start at 50:50, with a minimum width of 320px each. Drag the central divider
-  using a mouse or touch, or focus it with Tab and use Left/Right arrows to adjust by 16px.
-  The divider is a thin line without a grip, with a 12px interaction area and a visible keyboard
-  focus indicator. Neither pane can collapse.
-- The preferred split ratio is stored in LocalStorage under `qemu-playground:workspace-ratio:v1`.
-  Reloading restores it; viewport changes constrain the displayed split to the minimum widths
-  without replacing the preference. Invalid or unavailable storage falls back to equal widths.
-  There is no reset-to-equal-width action.
-- At 900px or below, the workspace uses `Code / Result` tabs with the toolbar always visible.
-  Switching these tabs preserves the source editor instance, including editing state and undo history.
-- Mobile supports reading code and results, running code, and inspecting restored share URLs.
-  It does not provide a separate mobile editing interface.
-- There is no permanent sidebar, file tree, or settings panel. Saved snippets are managed through
-  `Open` and `Save` dialogs.
+- Above 1080px, a collapsible 224px file sidebar sits beside resizable source and result panes.
+  The reopening control remains visible above the workspace. Collapsing the sidebar gives its
+  space to the panes; the open/closed preference is saved in the file collection.
+- Source and result panes start at 50:50, with a minimum width of 320px each. Drag the central
+  divider, or focus it and use Left/Right arrows to adjust by 16px. The divider has a 12px hit
+  area and a visible focus indicator. Neither pane can collapse.
+- The preferred split ratio is stored under `qemu-playground:workspace-ratio:v1`. Viewport
+  changes constrain the displayed ratio without replacing the preference.
+- At 1080px or below, files appear in an initially closed overlay drawer. Selecting a file
+  closes it. Code / Result tabs share an always-visible bar with Run. Running selects Result;
+  completion never changes the selected file or tab.
+- Source settings appear above the editor: filename, a C target selector or fixed assembly
+  architecture, and an always-editable compiler-options input. On narrow screens, the options
+  input occupies a second row. There is no separate settings screen.
+- On wide screens, Run sits in the result header beside the current filename and target.
+  Share and Theme sit in the global header.
 
-## Toolbar
+## Files and operations
 
-- The controls are language, target, compile options, `Run`, `Open`, `Save`, `Share`, and an
-  icon-only Theme menu.
-- Language uses a segmented control; target uses a non-clearable select.
-- `Run` is the primary action. `Share` encodes the current code, language, target, and compiler options.
-- Theme uses a Mantine `ActionIcon` with an accessible name and tooltip. Its menu offers `System`,
-  `Light`, and `Dark`; the selected choice is persisted in LocalStorage under
-  `qemu-playground:color-scheme:v1`.
-- Compile options are always visible and optional. The placeholder gives an example (`-O2`);
-  there is no additional tooltip or explanatory text.
-- During execution, Run displays a loading indicator and is disabled. An in-flight guard also
-  prevents duplicate submissions before the disabled state renders.
+- Each file is an independent complete program. Run submits only its source and settings.
+  There are no folders, multi-file compilation, linking, search, or sorting controls.
+- New opens a dialog with a suggested unique name and C / Assembly (RV64) / Assembly (AArch64)
+  choices, derived from the shared target table. Creation starts with a runnable sample; C
+  defaults to RV64. Language and assembly architecture are fixed for the lifetime of a file.
+- C target and compiler options are editable inline and remembered per file. Changing the C
+  target does not replace source code.
+- Names are unique, with `.c` for C and `.s` for assembly. Renaming preserves language and target.
+  Assembly architecture appears separately in the list.
+- New and Import appear at the top of the sidebar. Each file's menu provides Rename, Duplicate,
+  Download, Reorder files, and Delete. Duplicate opens the copy with a unique name such as
+  `hello-copy.c`, preserving its source and execution settings.
+- Delete asks for confirmation naming the file. A running file cannot be deleted. Deleting
+  the last file is allowed and displays an empty workspace with creation and import actions.
+- Files start in creation order. Drag a row's handle to reorder. Handles and menus appear on
+  hover or keyboard focus on pointer devices; touch devices show menus, with handles exposed
+  through Reorder files mode. There are no Move up / Move down buttons.
+- Keyboard reordering: focus a handle, press Space or Enter, use Up/Down, then Space or Enter
+  to confirm or Escape to cancel. Position changes are announced. Leaving the handle commits
+  the current order.
+- Import reads one local `.c` or `.s` file into a browser-managed copy. Assembly import requires
+  an explicit architecture choice. Edits never write back to the original local file.
+- Download works from any file's menu without selecting it. It contains source code only,
+  with no settings or metadata. There is no whole-collection export/import format.
 
-## Results
+## Execution and results
 
-- Result tabs are `Output / Build / Assembly`. Run selects `Output` and, on narrow screens, `Result`.
-- Each Run replaces the previous result with the current running state.
-- `Output` displays stdout, stderr, exit code or signal, execution state, and failure details.
-  `Build` displays compiler output. Truncated output is explicitly marked.
-- `Assembly` displays generated C assembly in a read-only editor. It is disabled for assembly input.
-  Changing to assembly input while that tab is selected displays `Output` instead.
-- Inactive result panels unmount. The generated assembly editor initializes only when its tab is
-  displayed and assembly is available; its cursor and scroll position are not retained on tab changes.
-- Error details remain in the logs, with a short status badge in the result header. Status changes
-  are announced through a polite live region.
+- Only one Run may be in flight across the playground. An immediate guard prevents duplicate
+  submissions before React updates the disabled button. Editing and file switching remain available.
+- While another file runs, Run is disabled and the executing filename is shown. Late responses
+  update only the originating file, including when a shared preview is added to files mid-run.
+- Each file keeps its last result and selected result tab during the page session. Results
+  are not restored after a reload. Run selects Output.
+- Editing retains the last result. `Out of date` appears when source, target, or compiler options
+  differ from the submitted input, and disappears when they match again. The last-run target
+  is visible; a disclosure shows its compiler options.
+- Re-running retains the previous output and labels it as such while running. A completed run,
+  including compilation failure, replaces it. A failed request retains previous output and
+  displays the failure reason.
+- Output displays stdout, stderr, exit code or signal, execution state, and failure details.
+  Build displays compiler output. Truncation is explicitly marked.
+- Assembly displays generated C assembly in a read-only editor using the submitted target.
+  It is disabled for assembly input. Inactive result panels unmount, so the generated assembly
+  viewer does not retain its cursor or scroll when its tab closes.
+- Theme offers System, Light, and Dark, persisted under `qemu-playground:color-scheme:v1`.
 
 ## Status badges
 
@@ -80,10 +100,12 @@ The labels are `success`, `compile error`, `runtime error`, `timeout`, `running`
   future targets without a dedicated mode, and gasArm for AArch64. Line comments are recognized and
   toggled with # on RV64 and // on AArch64; AArch64 # immediates remain code. Highlighting is basic,
   without complete instruction or register coverage for either architecture.
-- React controls the document. Editor edits update React; receiving the same text does not reset
-  editor state or notify React again. A different external value starts a replacement document with
-  empty undo history, collapsed selection at the start, and scroll at the top left. Language, target,
-  and read-only changes preserve the view and editing state unless the document also changes.
+- React controls the document. Source editor state is cached by file identity for the page
+  session: switching files or responsive layouts restores undo/redo, selection, and scroll,
+  including when two files have identical source. Theme and target changes reconfigure the
+  restored state. Deleted and closed-preview caches are released.
+- A different external value for the same editor identity resets its editing history and
+  selection. Results and editor history are never persisted in browser storage.
 - Generated assembly is read-only but remains focusable, selectable, copyable, searchable, and
   scrollable. Its language mode uses the target captured when the Run was submitted, even if the
   selected target later changes. Source editing remains available while a Run is in progress.
@@ -98,7 +120,7 @@ The labels are `success`, `compile error`, `runtime error`, `timeout`, `running`
   dark overrides.
 - The centralized theme retains Geist for UI text, Noto Sans JP as its Japanese fallback, and
   Geist Mono for code and logs. Controls use compact standard sizes; code and logs use 13px text.
-- Mantine SegmentedControl, Select, TextInput, Button, NavLink, Tabs, Modal, Alert, Badge, Skeleton,
+- Mantine NativeSelect, TextInput, Button, Menu, Drawer, Tabs, Modal, Alert, Badge, Skeleton,
   and Splitter provide the common controls. Custom CSS handles playground layout, divider appearance, scrolling, log formatting,
   and editor positioning.
 - Editor search panels stay inside their editor containers. Dropdowns and modal portals render
@@ -106,18 +128,12 @@ The labels are `success`, `compile error`, `runtime error`, `timeout`, `running`
 
 ## Dialogs and keyboard access
 
-- Controls have accessible names and support keyboard navigation. Tabs activate with arrow keys.
-- Dialogs trap focus, close with Escape or an outside click, and return focus to their opener.
-- Save initially focuses the snippet name. Whitespace-only names cannot be saved; names are trimmed.
-  Saving an existing name replaces that snippet without a separate confirmation.
-- Open initially focuses the first saved snippet, or Close when the list is empty. A snippet can be
-  opened or deleted with its own named control. The empty state reads `Nothing saved yet.`
-
-- Share and Save show a checkmark and `Copied` or `Saved` inside the respective button for two
-  seconds after success. Button dimensions and header height stay unchanged during feedback.
-- Share errors appear in a popover below the button without resizing the workspace. They remain
-  until dismissed with the close control or Escape, or replaced by a subsequent Share result.
-  Dismissing returns focus to Share. Success and error feedback are announced to screen readers.
+- Controls have accessible names. Tabs activate with arrow keys. Dialogs trap focus, support
+  Escape, and return focus to their opener.
+- New, Import, Rename, and Add to files dialogs focus the filename. Empty names and duplicate
+  normalized names cannot be submitted. The extension is fixed by the language.
+- Share shows a checkmark and Copied for two seconds after success without changing button size.
+  Errors remain in a popover until dismissed or replaced. Dismissal returns focus to Share.
 
 ## API requests
 
@@ -132,23 +148,38 @@ The labels are `success`, `compile error`, `runtime error`, `timeout`, `running`
 - Format: `<origin>/#s=<payload>`. The payload is `JSON.stringify({v, l, t, c, o})`, compressed with
   lz-string's `compressToEncodedURIComponent`. These fields represent format version, language,
   target, code, and compiler options. The format version is 1.
-- The fragment is not sent to the server. Opening a URL restores the form without running it.
-  Invalid payloads are ignored in favor of the normal initial state.
+- The fragment is not sent to the server. Opening a valid URL creates an editable, runnable
+  temporary preview without overwriting or adding to the saved collection. Invalid payloads
+  are ignored. Opening a link never runs code automatically.
+- The preview remains available when switching to a saved file. Its unsaved status is explicit.
+  Closing an edited preview asks for confirmation; an unchanged preview closes immediately.
+  A running preview cannot close. Reload discards preview edits and reopens the URL payload.
+- Add to files asks for a unique filename and transfers the current preview into the collection,
+  retaining its editor identity, undo history, results, and any in-flight run. The preview entry
+  disappears and the URL fragment is cleared. Closing also clears the fragment.
+- Share includes only the active program and execution settings, never the collection.
 - The full URL limit is 2000 characters. Exceeding it displays an error without truncating the data
   or changing the address bar.
 - Share updates the address bar and copies the URL to the clipboard. If copying fails, feedback
   directs the user to the URL in the address bar.
 
-## Local snippets
+## Browser persistence
 
-- Snippets live only in LocalStorage under `qemu-playground:snippets:v1`.
-- Each stores a name, language, target, code, and compiler options, plus its ID and save time.
-- Saving under an existing name retains its ID and updates its contents. Open lists the newest
-  snippets first and supports loading and deletion. Corrupt entries are skipped.
+- `qemu-playground:files:v1` stores files in user order, the last selected saved-file ID, and the
+  desktop sidebar preference. A file contains ID, name, language, target, code, and compiler options.
+  Changes persist automatically; there are no manual Open or Save actions and no account sync.
+- A first visit without files creates one RV64 C sample. A persisted empty collection stays empty.
+- When the collection key is absent, valid entries from `qemu-playground:snippets:v1` migrate with
+  their source and settings. Names gain the correct extension, path/control characters are
+  normalized, and numeric suffixes resolve collisions without dropping programs. Migration keeps
+  the previous newest-save-first order because legacy data has no creation timestamp. The old
+  storage key remains intact; subsequent loads use the collection key.
+- An unreadable collection is not silently overwritten. Storage errors are shown in an alert;
+  a write failure keeps the current in-memory edits available for individual download.
 
 ## Samples
 
-- There are four samples: C / assembly combined with RV64 / AArch64. The default is RV64 C hello world.
+- There are four samples: C / assembly combined with RV64 / AArch64.
 - Assembly samples use `_start` and direct write/exit syscalls, writing one line and exiting with 42.
-- Language or target changes replace the code only if it exactly matches one of the bundled samples.
-  User edits are preserved.
+- Samples populate newly created files. File switching and target changes never substitute samples
+  for existing code.

@@ -11,14 +11,6 @@
 .toolbar__brand {
   white-space: nowrap;
 }
-.toolbar__target {
-  width: 150px;
-}
-.toolbar__options {
-  flex: 1 1 100px;
-  min-width: 80px;
-  max-width: 240px;
-}
 .toolbar__actions {
   margin-left: auto;
 }

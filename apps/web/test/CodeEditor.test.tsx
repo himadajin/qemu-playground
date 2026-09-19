@@ -7,7 +7,7 @@ import { act, render, screen } from "@testing-library/react";
 import { StrictMode, useState } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { CodeEditor } from "../src/components/CodeEditor";
-import type { CodeEditorProps } from "../src/components/CodeEditor";
+import type { CodeEditorProps, EditorSessions } from "../src/components/CodeEditor";
 
 beforeAll(() => {
   Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
@@ -121,6 +121,41 @@ describe("CodeEditor integration", () => {
     rerender(<CodeEditor {...defaults} value={value} colorScheme="light" />);
     expect(view.state.facet(EditorView.darkTheme)).toBe(false);
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("restores per-file history, selection and scroll, including identical documents and remounts", () => {
+    const sessions: EditorSessions = new Map();
+    const { rerender, unmount } = render(
+      <CodeEditor {...defaults} fileId="a" sessions={sessions} />,
+    );
+    const view = currentView();
+    edit(view);
+    const value = view.state.doc.toString();
+    view.scrollDOM.scrollTop = 70;
+    view.scrollDOM.scrollLeft = 30;
+    rerender(<CodeEditor {...defaults} value={value} fileId="b" sessions={sessions} />);
+    expect(undoDepth(view.state)).toBe(0);
+    expect(view.state.selection.main.head).toBe(0);
+    act(() => view.dispatch({ selection: { anchor: 6 } }));
+    rerender(
+      <CodeEditor {...defaults} value={value} fileId="a" sessions={sessions} colorScheme="dark" />,
+    );
+    expect(undoDepth(view.state)).toBe(1);
+    expect(view.state.selection.main.head).toBe(3);
+    expect(view.scrollDOM.scrollTop).toBe(70);
+    expect(view.scrollDOM.scrollLeft).toBe(30);
+    expect(view.state.facet(EditorView.darkTheme)).toBe(true);
+    unmount();
+    const onChange = vi.fn();
+    render(
+      <CodeEditor {...defaults} value={value} fileId="a" sessions={sessions} onChange={onChange} />,
+    );
+    const restored = currentView();
+    expect(undoDepth(restored.state)).toBe(1);
+    expect(restored.state.selection.main.head).toBe(3);
+    expect(restored.scrollDOM.scrollTop).toBe(70);
+    edit(restored);
+    expect(onChange).toHaveBeenCalledOnce();
   });
 
   it("uses the latest onChange without rebuilding the view", () => {

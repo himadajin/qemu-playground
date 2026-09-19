@@ -10,7 +10,15 @@ import { useLayoutEffect, useRef } from "react";
 import { editorLanguage } from "../editor/languages";
 import { editorTheme, type EditorColorScheme } from "../editor/theme";
 
+export type EditorSessions = Map<string, { state: EditorState; top: number; left: number }>;
+const language = new Compartment();
+const theme = new Compartment();
+const access = new Compartment();
+const listener = new Compartment();
+
 export interface CodeEditorProps {
+  fileId?: string;
+  sessions?: EditorSessions;
   value: string;
   language: Language;
   target: TargetId;
@@ -61,9 +69,6 @@ export function CodeEditor(props: CodeEditorProps) {
   });
 
   useLayoutEffect(() => {
-    const language = new Compartment();
-    const theme = new Compartment();
-    const access = new Compartment();
     const createState = (current: CodeEditorProps) =>
       EditorState.create({
         doc: current.value,
@@ -72,15 +77,36 @@ export function CodeEditor(props: CodeEditorProps) {
           language.of(editorLanguage(current.language, current.target)),
           theme.of(editorTheme(current.colorScheme ?? "light")),
           access.of(interaction(current)),
-          EditorView.updateListener.of((update) => {
-            if (update.docChanged) latest.current.onChange?.(update.state.doc.toString());
-          }),
+          listener.of(
+            EditorView.updateListener.of((update) => {
+              if (update.docChanged) latest.current.onChange?.(update.state.doc.toString());
+            }),
+          ),
         ],
       });
+    const cached = latest.current.fileId
+      ? latest.current.sessions?.get(latest.current.fileId)
+      : undefined;
     const view = new EditorView({
       parent: containerRef.current!,
-      state: createState(latest.current),
+      state: cached?.state ?? createState(latest.current),
     });
+    if (cached) {
+      view.dispatch({
+        effects: [
+          language.reconfigure(editorLanguage(latest.current.language, latest.current.target)),
+          theme.reconfigure(editorTheme(latest.current.colorScheme ?? "light")),
+          access.reconfigure(interaction(latest.current)),
+          listener.reconfigure(
+            EditorView.updateListener.of((update) => {
+              if (update.docChanged) latest.current.onChange?.(update.state.doc.toString());
+            }),
+          ),
+        ],
+      });
+      view.scrollDOM.scrollTop = cached.top;
+      view.scrollDOM.scrollLeft = cached.left;
+    }
     editorRef.current = {
       view,
       language,
@@ -90,6 +116,13 @@ export function CodeEditor(props: CodeEditorProps) {
       props: latest.current,
     };
     return () => {
+      const previous = editorRef.current?.props;
+      if (previous?.fileId)
+        previous.sessions?.set(previous.fileId, {
+          state: view.state,
+          top: view.scrollDOM.scrollTop,
+          left: view.scrollDOM.scrollLeft,
+        });
       view.destroy();
       editorRef.current = null;
     };
@@ -98,7 +131,33 @@ export function CodeEditor(props: CodeEditorProps) {
   useLayoutEffect(() => {
     const editor = editorRef.current!;
     const { view } = editor;
-    if (view.state.doc.toString() !== props.value) {
+    if (editor.props.fileId !== props.fileId) {
+      const previous = editor.props;
+      if (previous.fileId)
+        previous.sessions?.set(previous.fileId, {
+          state: view.state,
+          top: view.scrollDOM.scrollTop,
+          left: view.scrollDOM.scrollLeft,
+        });
+      const cached = props.fileId ? props.sessions?.get(props.fileId) : undefined;
+      view.setState(
+        cached?.state.doc.toString() === props.value ? cached.state : editor.createState(props),
+      );
+      view.dispatch({
+        effects: [
+          language.reconfigure(editorLanguage(props.language, props.target)),
+          theme.reconfigure(editorTheme(props.colorScheme ?? "light")),
+          access.reconfigure(interaction(props)),
+          listener.reconfigure(
+            EditorView.updateListener.of((update) => {
+              if (update.docChanged) latest.current.onChange?.(update.state.doc.toString());
+            }),
+          ),
+        ],
+      });
+      view.scrollDOM.scrollTop = cached?.top ?? 0;
+      view.scrollDOM.scrollLeft = cached?.left ?? 0;
+    } else if (view.state.doc.toString() !== props.value) {
       // An external replacement starts a new document, without notifying onChange.
       // setState clears history and selection while keeping the EditorView alive.
       view.setState(editor.createState(props));

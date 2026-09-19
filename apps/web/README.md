@@ -1,67 +1,68 @@
 # @qemu-playground/web
 
-React/Vite フロントエンド。コード入力、Run、結果表示が 1 画面で完結する playground。
-画面仕様は `docs/internal/specs/web-frontend.md` を正とする。
+React/Vite frontend for independent C and assembly programs, QEMU execution, and
+result inspection. The behavior specification is
+[web-frontend.md](../../docs/internal/specs/web-frontend.md).
 
-## 起動
+## Development
 
 ```sh
-npm run dev --workspace @qemu-playground/web        # 開発サーバー
-npm run build --workspace @qemu-playground/web      # 型チェック + 本番ビルド (dist/)
+npm run dev --workspace @qemu-playground/web
+npm run build --workspace @qemu-playground/web
 npm run typecheck --workspace @qemu-playground/web
 npm run test --workspace @qemu-playground/web
 ```
 
-API は常に同一オリジンの相対パス `POST /api/run` を呼ぶ。
-開発時は Vite の proxy が `/api` を `http://localhost:8080` へ中継する
-(`vite.config.ts`)。本番でこの経路を担うのは Cloudflare 側の設定であり、
-フロントエンドのコードは変わらない。
+The frontend calls same-origin `POST /api/run`. Vite proxies `/api` to
+`http://localhost:8080` during development.
 
-## デプロイ(Cloudflare Workers)
+## Deployment
 
-`dist/` を Workers の static assets として配信し、`/api/*` だけ
-`worker/index.ts` の Worker fetch handler が Cloudflare Tunnel オリジンへ
-素通しする(`wrangler.jsonc` の `assets.run_worker_first`)。パス書き換えは
-行わない。Tunnel ホスト名は Cloudflare Access の Service Token ポリシーで
-保護されているため、Worker secrets `CF_ACCESS_CLIENT_ID` /
-`CF_ACCESS_CLIENT_SECRET` が設定されていれば対応するヘッダを付与する。
+Cloudflare Workers serves `dist/` as static assets. `worker/index.ts` forwards
+`/api/*` to the Cloudflare Tunnel origin without rewriting paths. When configured,
+`CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` authenticate the proxy with
+Cloudflare Access. `wrangler.jsonc` defines the custom domain and `API_ORIGIN`;
+workers.dev and preview URLs are disabled to prevent bypassing Access.
 
-配信ホスト名(カスタムドメイン)とプロキシ先オリジンは `wrangler.jsonc` の
-`routes` と `vars.API_ORIGIN` で設定する。Access を迂回できないよう
-workers.dev / preview URL は無効化している。`main` への push で
-`.github/workflows/deploy-web.yml` が自動デプロイする。手動デプロイ・
-ローカル確認・Cloudflare 側の前提作業は
-[docs/user/self-hosting.md](../../docs/user/self-hosting.md) を参照。
+Pushes to `main` deploy through `.github/workflows/deploy-web.yml`. For local Worker
+checks, manual deployment, and infrastructure setup, see
+[self-hosting](../../docs/user/self-hosting.md).
 
-```sh
-npx --prefix apps/web wrangler dev      # ローカル確認(認証不要)
-npx --prefix apps/web wrangler deploy   # 要 Cloudflare 認証
-```
+## Files and persistence
 
-## 共有 URL
+The sidebar manages independent, single-source programs. Files have unique names,
+fixed language and assembly architecture, and per-file compiler options and C target.
+Creation, rename, duplication, deletion, source import/download, and accessible manual
+reordering are supported. There are no folders or multi-file builds.
 
-コード・言語・ターゲット・コンパイルオプションを URL フラグメント
-`#s=<payload>` に埋め込む。フラグメントのためサーバーには送信されない。
+`lib/files.ts` manages the collection stored automatically under
+`qemu-playground:files:v1`: file records, manual order, last selected saved file,
+and desktop sidebar preference. Files contain ID, name, language, target, code,
+and compiler options. An explicitly empty collection remains empty on reload.
 
-- エンコード: `JSON.stringify` した状態を lz-string の
-  `compressToEncodedURIComponent` で圧縮する。可逆で、出力はフラグメントに
-  そのまま置ける文字だけを含む。
-  ペイロードに `+` が含まれるため復元は `URLSearchParams` を使わず手動で切り出す。
-- 上限: URL 全体で **2000 文字** (`MAX_SHARE_URL_LENGTH`)。
-  超える場合は URL を作らず、切り詰めもせずエラーとして通知する。
-- URL を開くとフォームが復元されるだけで、自動実行はしない。
-- Share 実行時はアドレスバーを共有 URL に置き換え、クリップボードへコピーする。
+When the new key is absent, `lib/storage.ts` reads legacy
+`qemu-playground:snippets:v1` entries for migration. Normalization and unique suffixes
+preserve all valid programs despite filename collisions. The old key stays intact.
+Unreadable collection data is not overwritten. No account or server storage is used.
 
-## 保存
+Results and editor history are session-only. Each run captures its source file ID
+and input snapshot. Only one request is allowed at a time; switching files cannot
+redirect late results. Editing marks differing results as out of date. Re-running
+retains previous output while waiting; request failures retain it with an error.
 
-LocalStorage のキー `qemu-playground:snippets:v1` に配列として保存する。
-サーバーには一切保存しない。
+## Sharing
 
-- 保存対象: スニペット名、言語、ターゲット、コード、コンパイルオプション、保存時刻。
-- `Save` は名前を付けて保存する。同名のスニペットがある場合は id を保ったまま上書きする。
-- `Open` は保存済み一覧をダイアログで表示し、選択して読み込む/削除する。
-  常設のサイドバーやファイルツリーは持たない。
-- 壊れたエントリは読み飛ばし、一覧全体を失わない。
+Version-1 share links encode `JSON.stringify({v, l, t, c, o})` using lz-string's
+`compressToEncodedURIComponent` in `#s=<payload>`. The fragment is not sent to the
+server. Decode it directly, not through URLSearchParams, because it can contain `+`.
+The full URL limit is 2000 characters; oversized shares report an error without
+truncation or changing the URL. Share updates the address bar and copies the link.
+
+A shared link opens an editable, runnable temporary preview, separate from saved
+files. Add to files preserves its identity and session state, including in-flight
+execution. Closing an edited preview asks for confirmation. Adding or closing clears
+the fragment; reload otherwise reopens the original URL payload. Only the active
+program and settings are shared, never the collection.
 
 ## Editor
 
@@ -83,10 +84,11 @@ replace, bracket matching and closing, and indentation. No completion, diagnosti
 folding, formatting, or language service is enabled. The editor follows the application
 color scheme, uses Geist Mono, keeps lines unwrapped, and scrolls independently.
 
-The React value controls the document. Editor edits notify `onChange`; matching
-values preserve editing state. A different external value resets undo history,
-selection, cursor, and scroll. Language, target, and read-only changes reconfigure
-the existing view. Narrow-layout Code/Result tabs keep the source editor mounted.
+The React value controls the document. A session cache keyed by file ID preserves
+CodeMirror state, undo/redo, selection, and scroll across file switches and responsive
+layout changes. Cached states reconfigure their theme, language, and change listener
+when restored. Deleted files and closed previews release their cache entries.
+A different external value for the same editor identity resets editing state.
 Generated assembly uses the target captured when its Run was submitted and is
 read-only, focusable, selectable, copyable, and searchable. Closing its result tab
 unmounts the view and discards its editing state.
