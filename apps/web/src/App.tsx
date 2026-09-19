@@ -1,6 +1,6 @@
 import type { Language, TargetId } from "@qemu-playground/shared";
 import { Tabs } from "@mantine/core";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { CodeEditor } from "./components/CodeEditor";
 import { ResultPane, type ResultTab } from "./components/ResultPane";
 import { OpenDialog, SaveDialog } from "./components/SnippetDialogs";
@@ -13,7 +13,6 @@ import { buildShareUrl, readShareStateFromHash, type ShareState } from "./lib/sh
 import { deleteSnippet, loadSnippets, saveSnippet, type SavedSnippet } from "./lib/storage";
 
 const NARROW_QUERY = "(max-width: 900px)";
-const NOTICE_TIMEOUT_MS = 5000;
 
 /** Share URLs restore the form; they never start a Run on their own (design.md). */
 function initialState(): ShareState {
@@ -48,30 +47,23 @@ export function App() {
   const [openOpen, setOpenOpen] = useState(false);
   const [snippetName, setSnippetName] = useState("");
 
-  const [notice, setNotice] = useState<ToolbarNotice | null>(null);
-  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [notices, setNotices] = useState<Record<"share" | "save", ToolbarNotice | null>>({
+    share: null,
+    save: null,
+  });
 
   const isNarrow = useMediaQuery(NARROW_QUERY);
   const running = phase.kind === "running";
   const runInFlight = useRef(false);
   const view = useMemo(() => deriveResultView(phase, language), [phase, language]);
 
-  const showNotice = useCallback((next: ToolbarNotice) => {
-    setNotice(next);
-    if (noticeTimer.current !== null) {
-      clearTimeout(noticeTimer.current);
-    }
-    noticeTimer.current = setTimeout(() => setNotice(null), NOTICE_TIMEOUT_MS);
+  const showNotice = useCallback((action: "share" | "save", next: ToolbarNotice) => {
+    setNotices((current) => ({ ...current, [action]: next }));
   }, []);
 
-  useEffect(
-    () => () => {
-      if (noticeTimer.current !== null) {
-        clearTimeout(noticeTimer.current);
-      }
-    },
-    [],
-  );
+  const dismissNotice = useCallback((action: "share" | "save") => {
+    setNotices((current) => ({ ...current, [action]: null }));
+  }, []);
 
   // Assembly is meaningless for assembly input, so never display it selected
   // even if it was selected before switching to an asm input.
@@ -134,7 +126,7 @@ export function App() {
     });
 
     if (!built.ok) {
-      showNotice({
+      showNotice("share", {
         tone: "error",
         text: `Too long to share: ${built.length} of ${built.limit} characters. Shorten the code.`,
       });
@@ -144,11 +136,11 @@ export function App() {
     window.history.replaceState(null, "", built.url);
     try {
       await navigator.clipboard.writeText(built.url);
-      showNotice({ tone: "info", text: "Share URL copied to clipboard." });
+      showNotice("share", { tone: "info", text: "Share URL copied to clipboard." });
     } catch {
-      showNotice({
+      showNotice("share", {
         tone: "error",
-        text: "Could not copy; the share URL is in the address bar.",
+        text: "Could not copy the link. Copy the URL from the address bar.",
       });
     }
   }, [language, target, code, compileOptions, showNotice]);
@@ -166,7 +158,7 @@ export function App() {
       );
       setSnippetName(name);
       setSaveOpen(false);
-      showNotice({ tone: "info", text: `Saved “${name}”.` });
+      showNotice("save", { tone: "info", text: `Saved “${name}”.` });
     },
     [language, target, code, compileOptions, showNotice],
   );
@@ -212,7 +204,8 @@ export function App() {
         onOpen={() => setOpenOpen(true)}
         onSave={() => setSaveOpen(true)}
         onShare={() => void handleShare()}
-        notice={notice}
+        notices={notices}
+        onDismissNotice={dismissNotice}
       />
 
       {isNarrow ? (

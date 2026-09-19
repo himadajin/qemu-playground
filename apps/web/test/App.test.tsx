@@ -235,7 +235,8 @@ describe("playground interactions", () => {
     await user.type(name, "demo{Enter}");
     expect(loadSnippets(localStorage)).toHaveLength(1);
     fireEvent.change(source(), { target: { value: "updated source" } });
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(screen.getByRole("button", { name: "Saved" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Saved" }));
     dialog = screen.getByRole("dialog", { name: "Save snippet" });
     expect(within(dialog).getByRole("textbox", { name: "Snippet name" })).toHaveValue("demo");
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
@@ -275,6 +276,63 @@ describe("playground interactions", () => {
     await user.click(screen.getByRole("button", { name: /existing.*Assembly/ }));
     expect(source()).toHaveValue("saved code");
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("confirms copying in the button and resets feedback two seconds after the latest copy", async () => {
+    userEvent.setup();
+    const copy = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    vi.useFakeTimers();
+    try {
+      mount();
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Share" }));
+        await Promise.resolve();
+      });
+      expect(copy).toHaveBeenCalledWith(window.location.href);
+      expect(screen.getByRole("button", { name: "Copied" })).toBeVisible();
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Copied" }));
+        await Promise.resolve();
+      });
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
+      expect(screen.getByRole("button", { name: "Copied" })).toBeVisible();
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(screen.getByRole("button", { name: "Share" })).toBeVisible();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps copy errors until dismissed and returns focus to Share", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("denied"));
+    mount();
+    await user.click(screen.getByRole("button", { name: "Share" }));
+    vi.useFakeTimers();
+    try {
+      act(() => {
+        vi.advanceTimersByTime(6000);
+      });
+      expect(screen.getByRole("alert")).toHaveTextContent("Copy the URL from the address bar.");
+    } finally {
+      vi.useRealTimers();
+    }
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share" })).toHaveFocus();
+    await user.click(screen.getByRole("button", { name: "Share" }));
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Dismiss share error" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share" })).toHaveFocus();
   });
 
   it("reports clipboard failure and rejects an oversized share URL", async () => {

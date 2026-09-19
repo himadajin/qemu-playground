@@ -79,6 +79,12 @@ The labels are `success`, `compile error`, `runtime error`, `timeout`, `running`
 - Open initially focuses the first saved snippet, or Close when the list is empty. A snippet can be
   opened or deleted with its own named control. The empty state reads `Nothing saved yet.`
 
+- Share and Save show a checkmark and `Copied` or `Saved` inside the respective button for two
+  seconds after success. Button dimensions and header height stay unchanged during feedback.
+- Share errors appear in a popover below the button without resizing the workspace. They remain
+  until dismissed with the close control or Escape, or replaced by a subsequent Share result.
+  Dismissing returns focus to Share. Success and error feedback are announced to screen readers.
+
 ## API requests
 
 - The frontend calls only the same-origin `POST /api/run`. Vite proxies development requests to

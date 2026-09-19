@@ -1,4 +1,15 @@
-import { Button, Group, SegmentedControl, Select, Text, TextInput } from "@mantine/core";
+import { useEffect, useRef } from "react";
+import {
+  Button,
+  CloseButton,
+  Group,
+  Popover,
+  SegmentedControl,
+  Select,
+  Text,
+  TextInput,
+  VisuallyHidden,
+} from "@mantine/core";
 import { TARGETS, type Language, type TargetId } from "@qemu-playground/shared";
 
 export interface ToolbarNotice {
@@ -18,7 +29,8 @@ interface ToolbarProps {
   onOpen: () => void;
   onSave: () => void;
   onShare: () => void;
-  notice: ToolbarNotice | null;
+  notices: Record<"share" | "save", ToolbarNotice | null>;
+  onDismissNotice: (action: "share" | "save") => void;
 }
 
 export function Toolbar({
@@ -33,7 +45,8 @@ export function Toolbar({
   onOpen,
   onSave,
   onShare,
-  notice,
+  notices,
+  onDismissNotice,
 }: ToolbarProps) {
   return (
     <header className="toolbar">
@@ -85,23 +98,96 @@ export function Toolbar({
         <Button size="xs" variant="default" onClick={onOpen}>
           Open
         </Button>
-        <Button size="xs" variant="default" onClick={onSave}>
-          Save
-        </Button>
-        <Button size="xs" variant="default" onClick={onShare}>
-          Share
-        </Button>
+        <FeedbackButton
+          action="save"
+          onClick={onSave}
+          notice={notices.save}
+          onDismiss={onDismissNotice}
+        />
+        <FeedbackButton
+          action="share"
+          onClick={onShare}
+          notice={notices.share}
+          onDismiss={onDismissNotice}
+        />
       </Group>
-      {notice !== null && (
-        <Text
-          size="xs"
-          c={notice.tone === "error" ? "red" : "dimmed"}
-          className="toolbar__notice"
-          role="status"
-        >
-          {notice.text}
-        </Text>
-      )}
     </header>
+  );
+}
+
+function FeedbackButton({
+  action,
+  onClick,
+  notice,
+  onDismiss,
+}: {
+  action: "share" | "save";
+  onClick: () => void;
+  notice: ToolbarNotice | null;
+  onDismiss: (action: "share" | "save") => void;
+}) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const label = action === "share" ? "Share" : "Save";
+  const successLabel = action === "share" ? "Copied" : "Saved";
+  const success = notice?.tone === "info";
+  const error = notice?.tone === "error";
+
+  useEffect(() => {
+    if (notice?.tone !== "info") return;
+    const timer = setTimeout(() => onDismiss(action), 2000);
+    return () => clearTimeout(timer);
+  }, [notice, action, onDismiss]);
+
+  const closeError = () => {
+    onDismiss(action);
+    buttonRef.current?.focus();
+  };
+
+  return (
+    <>
+      <Popover
+        opened={error}
+        position="bottom-end"
+        withArrow
+        withinPortal={false}
+        shadow="sm"
+        width={300}
+        closeOnClickOutside={false}
+        onDismiss={closeError}
+        transitionProps={{ duration: 0 }}
+      >
+        <Popover.Target>
+          <Button
+            ref={buttonRef}
+            size="xs"
+            variant="default"
+            onClick={onClick}
+            onKeyDown={(event) => {
+              if (error && event.key === "Escape") {
+                event.preventDefault();
+                closeError();
+              }
+            }}
+          >
+            <span className="toolbar__feedback-label">
+              <span style={{ visibility: success ? "hidden" : "visible" }}>{label}</span>
+              <span style={{ visibility: success ? "visible" : "hidden" }}>
+                <span aria-hidden="true">✓ </span>
+                {successLabel}
+              </span>
+            </span>
+          </Button>
+        </Popover.Target>
+        <Popover.Dropdown className="toolbar__error">
+          <Group gap="xs" wrap="nowrap" align="flex-start">
+            <Text size="xs" role="alert" className="toolbar__error-text">
+              {error ? notice.text : null}
+            </Text>
+            <CloseButton size="sm" aria-label={`Dismiss ${action} error`} onClick={closeError} />
+          </Group>
+        </Popover.Dropdown>
+      </Popover>
+      <VisuallyHidden role="status">{success ? notice.text : ""}</VisuallyHidden>
+    </>
   );
 }

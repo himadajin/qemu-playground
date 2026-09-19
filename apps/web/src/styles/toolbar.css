@@ -22,7 +22,16 @@
 .toolbar__actions {
   margin-left: auto;
 }
-.toolbar__notice {
-  flex-basis: 100%;
+.toolbar__feedback-label {
+  display: grid;
+}
+.toolbar__feedback-label > span {
+  grid-area: 1 / 1;
+}
+.toolbar__error {
+  max-width: calc(100vw - 24px);
+}
+.toolbar__error-text {
+  flex: 1;
   overflow-wrap: anywhere;
 }
