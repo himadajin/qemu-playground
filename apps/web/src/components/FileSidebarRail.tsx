@@ -1,4 +1,4 @@
-import { ActionIcon, Stack, Tooltip } from "@mantine/core";
+import { Stack, Tooltip, UnstyledButton } from "@mantine/core";
 import {
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
@@ -8,48 +8,57 @@ import { ImportSourceButton } from "./ImportSourceButton";
 
 interface Props {
   opened: boolean;
+  drawer?: boolean;
   onToggle: () => void;
   onNew: () => void;
   onImport: (file: File) => void;
 }
 
-export function FileSidebarRail({ opened, onToggle, onNew, onImport }: Props) {
-  const toggleLabel = opened ? "Hide files" : "Show files";
+export function FileSidebarRail({ opened, drawer = false, onToggle, onNew, onImport }: Props) {
+  const toggleLabel = drawer ? "Close sidebar" : opened ? "Collapse sidebar" : "Expand sidebar";
   return (
-    <Stack w={44} align="center" gap={8} py={8} style={{ flexShrink: 0 }}>
+    <Stack className="sidebar__actions" gap={8}>
       <Tooltip
         label={toggleLabel}
+        disabled={opened}
         position="right"
         events={{ hover: true, focus: true, touch: false }}
-        interactive
       >
-        <ActionIcon
-          size={32}
-          variant="subtle"
-          color="gray"
+        <UnstyledButton
+          className="sidebar__action"
           aria-label={toggleLabel}
           aria-expanded={opened}
-          aria-controls="desktop-files"
+          aria-controls={drawer ? "drawer-files" : "desktop-files"}
           onClick={onToggle}
         >
-          {opened ? (
-            <IconLayoutSidebarLeftCollapse size={18} />
-          ) : (
-            <IconLayoutSidebarLeftExpand size={18} />
-          )}
-        </ActionIcon>
+          <span className="sidebar__icon">
+            {opened ? (
+              <IconLayoutSidebarLeftCollapse size={18} />
+            ) : (
+              <IconLayoutSidebarLeftExpand size={18} />
+            )}
+          </span>
+          <span className="sidebar__label" aria-hidden="true">
+            {toggleLabel}
+          </span>
+        </UnstyledButton>
       </Tooltip>
       <Tooltip
-        label="New"
+        label="New file"
+        disabled={opened}
         position="right"
         events={{ hover: true, focus: true, touch: false }}
-        interactive
       >
-        <ActionIcon size={32} variant="subtle" color="gray" aria-label="New" onClick={onNew}>
-          <IconPlus size={18} />
-        </ActionIcon>
+        <UnstyledButton className="sidebar__action" aria-label="New file" onClick={onNew}>
+          <span className="sidebar__icon">
+            <IconPlus size={18} />
+          </span>
+          <span className="sidebar__label" aria-hidden="true">
+            New file
+          </span>
+        </UnstyledButton>
       </Tooltip>
-      <ImportSourceButton iconOnly onImport={onImport} />
+      <ImportSourceButton sidebarExpanded={opened} onImport={onImport} />
     </Stack>
   );
 }

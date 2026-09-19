@@ -21,10 +21,11 @@ Code lines do not wrap. Scroll horizontally to inspect long lines.
 ## Files in this browser
 
 The file sidebar holds independent programs. On wide screens, its icon buttons let you
-show or hide the list, create a program, and import a source file. Hover over a button
-or focus it with the keyboard to see its label. Hiding the list leaves these buttons
-available and remembers your preference. Creating or importing a program keeps the
-list in its current open or closed state. **New** lets you choose a name and C,
+show or hide the list, create a program, and import a source file. Expanding the sidebar
+adds labels beside the icons and shows the file list below the actions. When collapsed,
+hover over a button or focus it with the keyboard to see its label. Hiding the list leaves
+these buttons available and remembers your preference. Creating or importing a program keeps the
+list in its current open or closed state. **New file** lets you choose a name and C,
 Assembly (RV64), or Assembly (AArch64); each starts with runnable sample code.
 Language and assembly architecture stay fixed. C files let you change the target
 above the editor. Compiler options are always editable inline.
@@ -41,12 +42,12 @@ Each file's menu offers **Rename**, **Duplicate**, **Download**, and **Delete**.
 Deletion asks for confirmation and is unavailable while the file is running.
 You can delete all files and start again from the empty workspace.
 
-Drag a file's handle to reorder the list. With a keyboard, focus its handle, press
+Drag a file's right-side handle to reorder the list. With a keyboard, focus its handle, press
 **Space**, use **Up/Down**, and press **Space** to confirm or **Escape** to cancel.
 On touch screens, choose **Reorder files** from a file menu to expose the handles,
 then select **Done** when finished.
 
-**Import** creates a browser copy of a local `.c` or `.s` source file. Assembly
+**Import files** creates a browser copy of a local `.c` or `.s` source file. Assembly
 imports require an architecture choice. Edits do not change the original local
 file. **Download** saves one file's code without its execution settings.
 
@@ -54,7 +55,10 @@ file. **Download** saves one file's code without its execution settings.
 
 On wide screens, **Run** is in the result-panel header. On narrow screens it stays
 beside the **Code / Result** tabs and switches to Result when pressed. The file
-sidebar becomes a drawer; selecting a file closes it.
+sidebar becomes a drawer opened from the button to the left of these tabs. It overlays
+the editor without shrinking it. Select a file, create or import a program, press Escape,
+or click the background or **Close sidebar** to close it. Your desktop sidebar preference
+is preserved when returning to a wider window.
 
 Only one program can run at a time. You can edit or switch files while it runs;
 the result always belongs to the file that started it, and completion does not

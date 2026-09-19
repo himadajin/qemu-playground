@@ -390,20 +390,20 @@ describe("playground interactions", () => {
     const user = userEvent.setup();
     let mounted = mount();
     const editor = source();
-    await user.click(screen.getByRole("button", { name: "Hide files" }));
+    await user.click(screen.getByRole("button", { name: "Collapse sidebar" }));
     expect(screen.queryByRole("navigation", { name: "Files" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Show files" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveAttribute(
       "aria-expanded",
       "false",
     );
     expect(source()).toBe(editor);
     expect(loadFiles(localStorage).sidebarOpen).toBe(false);
 
-    await user.click(screen.getByRole("button", { name: "New" }));
+    await user.click(screen.getByRole("button", { name: "New file" }));
     const dialog = screen.getByRole("dialog", { name: "New file" });
     await user.click(within(dialog).getByRole("button", { name: "New file" }));
     expect(loadFiles(localStorage).files).toHaveLength(2);
-    expect(screen.getByRole("button", { name: "Show files" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
 
     await user.upload(
       screen.getByLabelText("Import source file"),
@@ -416,8 +416,8 @@ describe("playground interactions", () => {
 
     mounted.unmount();
     mounted = mount();
-    expect(screen.getByRole("button", { name: "Show files" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Show files" }));
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Expand sidebar" }));
     expect(screen.getByRole("navigation", { name: "Files" })).toBeVisible();
     expect(screen.getByRole("button", { name: "imported.c" })).toBeVisible();
     expect(loadFiles(localStorage).sidebarOpen).toBe(true);
@@ -427,7 +427,7 @@ describe("playground interactions", () => {
   it("creates, renames, duplicates, and deletes files, preserving an empty collection", async () => {
     const user = userEvent.setup();
     const mounted = mount();
-    await user.click(screen.getByRole("button", { name: "New" }));
+    await user.click(screen.getByRole("button", { name: "New file" }));
     let dialog = screen.getByRole("dialog", { name: "New file" });
     await user.clear(within(dialog).getByLabelText("Filename"));
     await user.type(within(dialog).getByLabelText("Filename"), "startup");

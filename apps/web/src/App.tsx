@@ -1,11 +1,10 @@
 import { Alert, Button, useComputedColorScheme } from "@mantine/core";
-import { IconPlayerPlay, IconPlus } from "@tabler/icons-react";
+import { IconPlayerPlay } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "@mantine/hooks";
 import { LazyCodeEditor } from "./components/LazyCodeEditor";
 import type { EditorSessions } from "./components/CodeEditor";
 import { FileSidebar } from "./components/FileSidebar";
-import { ImportSourceButton } from "./components/ImportSourceButton";
 import { FileDialog, type FileDraft, type FileDialogSubmission } from "./components/FileDialog";
 import { Toolbar } from "./components/Toolbar";
 import { FileSettings } from "./components/FileSettings";
@@ -138,21 +137,6 @@ export function App() {
       runningId={runningId}
       preview={preview}
       onSelect={select}
-      actions={
-        narrow ? (
-          <>
-            <Button
-              size="xs"
-              variant="default"
-              leftSection={<IconPlus size={14} />}
-              onClick={newFile}
-            >
-              New
-            </Button>
-            <ImportSourceButton onImport={(file) => void importSource(file)} />
-          </>
-        ) : undefined
-      }
       onReorder={workspace.reorder}
       onAction={(action, file) => {
         if (action === "rename") setDraft({ mode: "rename", file });

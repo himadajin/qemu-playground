@@ -31,8 +31,10 @@ checks, manual deployment, and infrastructure setup, see
 ## Files and persistence
 
 The sidebar manages independent, single-source programs. Above 1080px, a persistent
-44px rail provides file-list toggle, New, and Import actions; expanding the list uses
-240px in total. Labels appear on hover or keyboard focus. Narrow screens use a drawer. Files have unique names,
+sidebar uses 44px for icons or 240px when expanded. Fixed-position icons gain labels
+above a full-width file list; width and labels transition smoothly with reduced-motion
+support. Collapsed labels appear in hover/focus tooltips. At 1080px or below, a button
+beside Code / Result / Run opens a 280px overlay drawer with the same vertical layout. Files have unique names,
 fixed language and assembly architecture, and per-file compiler options and C target.
 Creation, rename, duplication, deletion, source import/download, and accessible manual
 reordering are supported. There are no folders or multi-file builds.

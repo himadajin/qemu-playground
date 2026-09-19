@@ -1,5 +1,5 @@
 import { Button, Group, NavLink, Stack, Text, VisuallyHidden } from "@mantine/core";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { FileSidebarItem } from "./FileSidebarItem";
 import type { FileAction } from "./FileActionsMenu";
 import { useFileReorder } from "../hooks/useFileReorder";
@@ -11,7 +11,6 @@ interface Props {
   runningId: string | null;
   preview: ProgramFile | null;
   onSelect: (id: string) => void;
-  actions?: ReactNode;
   onAction: (action: FileAction, file: ProgramFile) => void;
   onReorder: (ids: string[]) => void;
 }
@@ -33,11 +32,6 @@ export function FileSidebar(props: Props) {
       <Text size="xs" fw={600} pt={14} px={16} pb={8}>
         Files
       </Text>
-      {props.actions && (
-        <Group gap={4} wrap="nowrap" px={12} pb={12}>
-          {props.actions}
-        </Group>
-      )}
       {props.preview && (
         <div className="files__preview">
           <NavLink

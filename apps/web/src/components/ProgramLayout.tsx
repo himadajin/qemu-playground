@@ -52,20 +52,33 @@ export function ProgramLayout({
     <>
       <Flex flex={1} mih={0}>
         {!narrow && (
-          <Flex component="aside" className="sidebar" w={sidebarOpen ? 240 : 44}>
+          <Flex
+            component="aside"
+            direction="column"
+            className="sidebar"
+            data-opened={sidebarOpen}
+            w={sidebarOpen ? 240 : 44}
+          >
             <FileSidebarRail
               opened={sidebarOpen}
               onToggle={onToggleSidebar}
               onNew={onNew}
               onImport={onImport}
             />
-            <Box id="desktop-files" flex={1} miw={0} hidden={!sidebarOpen}>
-              {sidebarOpen && sidebar}
+            <Box
+              id="desktop-files"
+              className="sidebar__files"
+              flex={1}
+              mih={0}
+              inert={!sidebarOpen}
+              aria-hidden={!sidebarOpen}
+            >
+              {sidebar}
             </Box>
           </Flex>
         )}
         <div className="workbench__main">
-          {narrow && (
+          {narrow && !hasActive && (
             <Group className="workbench__navigation" gap={8} py={5} px={12} wrap="nowrap">
               <ActionIcon
                 variant="subtle"
@@ -103,6 +116,15 @@ export function ProgramLayout({
               keepMountedMode="display-none"
             >
               <div className="mobile-run-bar">
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  aria-label="Show files"
+                  aria-expanded={drawerOpen}
+                  onClick={onToggleSidebar}
+                >
+                  <IconLayoutSidebarLeftExpand size={18} />
+                </ActionIcon>
                 <Tabs.List aria-label="Workspace">
                   <Tabs.Tab value="code">Code</Tabs.Tab>
                   <Tabs.Tab value="result">Result</Tabs.Tab>
@@ -130,10 +152,22 @@ export function ProgramLayout({
         opened={!!narrow && drawerOpen}
         onClose={onCloseDrawer}
         title="Your programs"
-        size={280}
-        styles={{ body: { height: "calc(100% - 64px)", padding: 0 } }}
+        withCloseButton={false}
+        size="min(280px, calc(100vw - 32px))"
+        styles={{ header: { display: "none" }, body: { height: "100%", padding: 0 } }}
       >
-        {sidebar}
+        <Flex direction="column" h="100%" data-opened="true" className="sidebar-drawer">
+          <FileSidebarRail
+            opened
+            drawer
+            onToggle={onCloseDrawer}
+            onNew={onNew}
+            onImport={onImport}
+          />
+          <Box id="drawer-files" flex={1} mih={0}>
+            {sidebar}
+          </Box>
+        </Flex>
       </Drawer>
     </>
   );

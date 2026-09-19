@@ -1,15 +1,15 @@
-import { ActionIcon, Button, FileButton, Tooltip } from "@mantine/core";
+import { Button, FileButton, Tooltip, UnstyledButton } from "@mantine/core";
 import { IconUpload } from "@tabler/icons-react";
 import { useRef } from "react";
 
 export function ImportSourceButton({
   onImport,
   inEmptyState = false,
-  iconOnly = false,
+  sidebarExpanded,
 }: {
   onImport: (file: File) => void;
   inEmptyState?: boolean;
-  iconOnly?: boolean;
+  sidebarExpanded?: boolean;
 }) {
   const resetRef = useRef<() => void>(null);
   return (
@@ -23,16 +23,21 @@ export function ImportSourceButton({
       }}
     >
       {(props) =>
-        iconOnly ? (
+        sidebarExpanded !== undefined ? (
           <Tooltip
-            label="Import"
+            label="Import files"
+            disabled={sidebarExpanded}
             position="right"
             events={{ hover: true, focus: true, touch: false }}
-            interactive
           >
-            <ActionIcon {...props} size={32} variant="subtle" color="gray" aria-label="Import">
-              <IconUpload size={18} />
-            </ActionIcon>
+            <UnstyledButton {...props} className="sidebar__action" aria-label="Import files">
+              <span className="sidebar__icon">
+                <IconUpload size={18} />
+              </span>
+              <span className="sidebar__label" aria-hidden="true">
+                Import files
+              </span>
+            </UnstyledButton>
           </Tooltip>
         ) : (
           <Button

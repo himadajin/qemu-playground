@@ -31,17 +31,6 @@ export function FileSidebarItem({
       data-file-id={file.id}
       className={`file${selected ? " file--selected" : ""}${moving ? " file--moving" : ""}`}
     >
-      <ActionIcon
-        className="file__handle"
-        variant="subtle"
-        color="gray"
-        size="xs"
-        aria-label={`Reorder ${file.name}`}
-        aria-pressed={moving}
-        {...reorderHandleProps}
-      >
-        <IconGripVertical size={13} />
-      </ActionIcon>
       <NavLink
         component="button"
         className="file__select"
@@ -71,6 +60,17 @@ export function FileSidebarItem({
         }
       />
 
+      <ActionIcon
+        className="file__handle"
+        variant="subtle"
+        color="gray"
+        size="xs"
+        aria-label={`Reorder ${file.name}`}
+        aria-pressed={moving}
+        {...reorderHandleProps}
+      >
+        <IconGripVertical size={13} />
+      </ActionIcon>
       <FileActionsMenu
         filename={file.name}
         canDelete={!running}

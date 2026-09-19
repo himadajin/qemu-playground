@@ -4,21 +4,25 @@ A single-screen playground for entering code, running it, and inspecting results
 
 ## Layout
 
-- Above 1080px, a 44px action rail sits beside resizable source and result panes. It contains
-  icon buttons for toggling the file list, New, and Import. Expanding the list makes the sidebar
-  240px wide in total. Toggling is immediate and leaves the action buttons in place; the
-  open/closed preference is saved in the file collection. Creating or importing a program
-  selects it without changing this preference.
-- Desktop action labels appear in tooltips on hover or keyboard focus, not as persistent text.
-  The expanded list has a Files heading without a count.
+- Above 1080px, the sidebar is 240px expanded or 44px collapsed beside resizable source
+  and result panes. Collapse sidebar, New file, and Import files are stacked above the
+  Files heading and full-width list. Only the list scrolls; actions stay at the top.
+- Collapsed actions show icons with hover/focus tooltips. Expanded actions add labels;
+  the whole row is clickable. Icon positions stay fixed during the 180ms width and label
+  transition. Reduced-motion preferences disable this transition. Hidden files cannot
+  receive focus. The open/closed preference is saved; creating or importing a program
+  does not change it.
 - Source and result panes start at 50:50, with a minimum width of 320px each. Drag the central
   divider, or focus it and use Left/Right arrows to adjust by 16px. The divider has a 12px hit
   area and a visible focus indicator. Neither pane can collapse.
 - The preferred split ratio is stored under `qemu-playground:workspace-ratio:v1`. Viewport
   changes constrain the displayed ratio without replacing the preference.
-- At 1080px or below, files appear in an initially closed overlay drawer. Selecting a file
-  closes it. Code / Result tabs share an always-visible bar with Run. Running selects Result;
-  completion never changes the selected file or tab.
+- At 1080px or below, a Show files button shares the Code / Result / Run bar. Files open
+  in an initially closed overlay drawer without resizing the editor. The drawer is 280px
+  wide, capped at the viewport width minus 32px, and uses the same actions-above-list layout.
+  Close sidebar, Escape, backdrop clicks, file selection, new-file creation, and importing
+  a selected source close it. Desktop open/closed preferences remain independent.
+  Running selects Result; completion never changes the selected file or tab.
 - Source settings appear above the editor: filename, a C target selector or fixed assembly
   architecture, and an always-editable compiler-options input. On narrow screens, the options
   input occupies a second row. There is no separate settings screen.
@@ -36,12 +40,13 @@ A single-screen playground for entering code, running it, and inspecting results
   target does not replace source code.
 - Names are unique, with `.c` for C and `.s` for assembly. Renaming preserves language and target.
   Assembly architecture appears separately in the list.
-- New and Import appear in the desktop action rail or at the top of the mobile drawer. Each file's menu provides Rename, Duplicate,
+- New file and Import files appear at the top of the sidebar or mobile drawer. Each file's menu provides Rename, Duplicate,
   Download, Reorder files, and Delete. Duplicate opens the copy with a unique name such as
   `hello-copy.c`, preserving its source and execution settings.
 - Delete asks for confirmation naming the file. A running file cannot be deleted. Deleting
   the last file is allowed and displays an empty workspace with creation and import actions.
-- Files start in creation order. Drag a row's handle to reorder. Handles and menus appear on
+- Files start in creation order. Drag a row's right-side handle to reorder. Filenames start
+  at the left without a handle gutter and do not shift when controls appear. Handles and menus appear on
   hover or keyboard focus on pointer devices; touch devices show menus, with handles exposed
   through Reorder files mode. There are no Move up / Move down buttons.
 - Keyboard reordering: focus a handle, press Space or Enter, use Up/Down, then Space or Enter
