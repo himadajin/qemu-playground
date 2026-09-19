@@ -128,6 +128,7 @@ function source() {
 beforeEach(() => {
   editorDisposed.mockClear();
   window.localStorage.clear();
+  document.documentElement.removeAttribute("data-mantine-color-scheme");
   window.history.replaceState(null, "", "/");
   fetchMock.mockReset().mockResolvedValue(response(result));
   vi.stubGlobal("fetch", fetchMock);
@@ -168,6 +169,60 @@ describe("playground interactions", () => {
       expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", "light");
       expect(source()).toHaveAttribute("data-color-scheme", "light");
     });
+  });
+
+  it("restores a persisted System choice before mount and follows the initial system scheme", async () => {
+    systemDark = true;
+    window.localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, "auto");
+    mount();
+
+    expect(screen.getByRole("button", { name: "Theme: System" })).toBeVisible();
+    expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", "dark");
+    expect(source()).toHaveAttribute("data-color-scheme", "dark");
+
+    act(() => setSystemColorScheme(false));
+    await waitFor(() => {
+      expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", "light");
+      expect(source()).toHaveAttribute("data-color-scheme", "light");
+    });
+  });
+
+  it.each(["light", "dark"] as const)(
+    "restores a persisted %s choice and ignores later system changes",
+    (choice) => {
+      systemDark = choice === "light";
+      window.localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, choice);
+      const mounted = mount();
+      const label = choice === "light" ? "Light" : "Dark";
+
+      expect(screen.getByRole("button", { name: `Theme: ${label}` })).toBeVisible();
+      expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", choice);
+      expect(source()).toHaveAttribute("data-color-scheme", choice);
+
+      act(() => setSystemColorScheme(choice === "dark"));
+      expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", choice);
+      expect(source()).toHaveAttribute("data-color-scheme", choice);
+
+      mounted.unmount();
+      mount();
+      expect(screen.getByRole("button", { name: `Theme: ${label}` })).toBeVisible();
+      expect(document.documentElement).toHaveAttribute("data-mantine-color-scheme", choice);
+    },
+  );
+
+  it("exposes the current theme choice through the radio menu semantics", async () => {
+    const user = userEvent.setup();
+    mount();
+
+    await user.click(screen.getByRole("button", { name: "Theme: System" }));
+    expect(screen.getByRole("menuitemradio", { name: "System" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByRole("menuitemradio", { name: "Light" })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
   });
 
   it("changes untouched samples with keyboard controls, preserves edits, and keeps a target selected", async () => {

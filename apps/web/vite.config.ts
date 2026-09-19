@@ -1,5 +1,6 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { getColorSchemeBootstrapScript } from "./src/lib/colorSchemeBootstrap";
 
 /**
  * The app always calls the API through the same-origin relative path
@@ -9,8 +10,22 @@ import { defineConfig } from "vite";
  */
 const API_DEV_SERVER = "http://localhost:8080";
 
+const colorSchemeBootstrapPlugin = {
+  name: "qemu-playground-color-scheme-bootstrap",
+  transformIndexHtml() {
+    return [
+      {
+        tag: "script",
+        attrs: { "data-mantine-script": true },
+        children: getColorSchemeBootstrapScript(),
+        injectTo: "head-prepend" as const,
+      },
+    ];
+  },
+};
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), colorSchemeBootstrapPlugin],
   server: {
     proxy: {
       "/api": {

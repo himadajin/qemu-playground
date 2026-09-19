@@ -4,24 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>QEMU Playground</title>
-    <script>
-      try {
-        var _colorScheme = window.localStorage.getItem("qemu-playground:color-scheme:v1");
-        var colorScheme =
-          _colorScheme === "light" || _colorScheme === "dark" || _colorScheme === "auto"
-            ? _colorScheme
-            : "auto";
-        var computedColorScheme =
-          colorScheme !== "auto"
-            ? colorScheme
-            : window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light";
-        document.documentElement.setAttribute("data-mantine-color-scheme", computedColorScheme);
-      } catch {
-        // The provider applies its default scheme if storage or matchMedia is unavailable.
-      }
-    </script>
   </head>
   <body>
     <div id="root"></div>

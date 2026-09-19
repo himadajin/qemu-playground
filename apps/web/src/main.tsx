@@ -3,7 +3,7 @@ import "@fontsource-variable/geist-mono";
 import "@fontsource-variable/noto-sans-jp";
 import "@mantine/core/styles.css";
 import { MantineProvider } from "@mantine/core";
-import { colorSchemeManager } from "./lib/colorScheme";
+import { colorSchemeManager, DEFAULT_COLOR_SCHEME } from "./lib/colorScheme";
 import { theme } from "./theme";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -20,7 +20,7 @@ createRoot(container).render(
     <MantineProvider
       theme={theme}
       colorSchemeManager={colorSchemeManager}
-      defaultColorScheme="auto"
+      defaultColorScheme={DEFAULT_COLOR_SCHEME}
     >
       <App />
     </MantineProvider>

@@ -49,7 +49,7 @@ const lightEditorTheme = EditorView.theme(
   {
     ...editorSurface,
     ".cm-gutters": {
-      color: "var(--mantine-color-gray-6)",
+      color: "var(--mantine-color-gray-7)",
       backgroundColor: "var(--mantine-color-gray-0)",
       borderColor: "var(--mantine-color-default-border)",
     },
@@ -68,7 +68,7 @@ const darkEditorTheme = EditorView.theme(
   {
     ...editorSurface,
     ".cm-gutters": {
-      color: "var(--mantine-color-dark-2)",
+      color: "var(--mantine-color-dark-1)",
       backgroundColor: "var(--mantine-color-dark-8)",
       borderColor: "var(--mantine-color-default-border)",
     },
@@ -85,31 +85,31 @@ const darkEditorTheme = EditorView.theme(
 
 const lightHighlightStyle = HighlightStyle.define(
   [
-    { tag: [tags.comment, tags.docComment], color: "var(--mantine-color-gray-6)" },
+    { tag: [tags.comment, tags.docComment], color: "var(--mantine-color-gray-7)" },
     {
       tag: [tags.keyword, tags.controlKeyword, tags.operatorKeyword, tags.definitionKeyword],
-      color: "var(--mantine-color-blue-7)",
+      color: "var(--mantine-color-blue-8)",
       fontWeight: "600",
     },
     {
       tag: [tags.typeName, tags.className, tags.namespace],
-      color: "var(--mantine-color-teal-7)",
+      color: "var(--mantine-color-teal-9)",
     },
-    { tag: [tags.string, tags.docString, tags.character], color: "var(--mantine-color-green-7)" },
-    { tag: [tags.number, tags.bool, tags.atom], color: "var(--mantine-color-orange-7)" },
+    { tag: [tags.string, tags.docString, tags.character], color: "var(--mantine-color-green-9)" },
+    { tag: [tags.number, tags.bool, tags.atom], color: "var(--mantine-color-orange-9)" },
     {
       tag: [tags.variableName, tags.propertyName, tags.labelName],
-      color: "var(--mantine-color-violet-7)",
+      color: "var(--mantine-color-violet-8)",
     },
     { tag: [tags.operator, tags.punctuation], color: "var(--mantine-color-gray-7)" },
-    { tag: tags.invalid, color: "var(--mantine-color-red-7)", textDecoration: "underline" },
+    { tag: tags.invalid, color: "var(--mantine-color-red-9)", textDecoration: "underline" },
   ],
   { themeType: "light" },
 );
 
 const darkHighlightStyle = HighlightStyle.define(
   [
-    { tag: [tags.comment, tags.docComment], color: "var(--mantine-color-dark-2)" },
+    { tag: [tags.comment, tags.docComment], color: "var(--mantine-color-dark-1)" },
     {
       tag: [tags.keyword, tags.controlKeyword, tags.operatorKeyword, tags.definitionKeyword],
       color: "var(--mantine-color-blue-3)",
