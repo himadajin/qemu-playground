@@ -1,7 +1,15 @@
 import { Button, Group, Modal, NativeSelect, Stack, TextInput } from "@mantine/core";
-import { TARGETS, type Language, type TargetId } from "@qemu-playground/shared";
+import { TARGETS, type TargetId } from "@qemu-playground/shared";
 import { useState } from "react";
-import { filename, type ProgramFile } from "../lib/files";
+import { validateFilename, type ProgramFile } from "../lib/files";
+
+type ProgramType = "c" | TargetId;
+export type FileDialogSubmission =
+  | { mode: "new"; name: string; programType: ProgramType }
+  | { mode: "import"; name: string; target?: TargetId }
+  | { mode: "rename"; name: string }
+  | { mode: "add"; name: string };
+
 export interface FileDraft {
   mode: "new" | "import" | "rename" | "add";
   file: ProgramFile;
@@ -15,12 +23,16 @@ export function FileDialog({
   draft: FileDraft;
   files: ProgramFile[];
   onClose: () => void;
-  onSubmit: (file: ProgramFile) => void;
+  onSubmit: (submission: FileDialogSubmission) => void;
 }) {
   const [name, setName] = useState(draft.file.name.slice(0, -2));
-  const [language, setLanguage] = useState<Language>(draft.file.language);
-  const [target, setTarget] = useState<TargetId>(draft.file.target);
+  const [programType, setProgramType] = useState<ProgramType>(
+    draft.file.language === "c" ? "c" : draft.file.target,
+  );
+  const [importTarget, setImportTarget] = useState<TargetId | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [targetError, setTargetError] = useState<string | null>(null);
+  const language = draft.mode === "new" ? (programType === "c" ? "c" : "asm") : draft.file.language;
   const title = {
     new: "New file",
     import: "Import source",
@@ -32,21 +44,35 @@ export function FileDialog({
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          const normalized = filename(name, language);
-          if (!name.trim()) {
-            setError("Enter a filename.");
+          const validated = validateFilename(
+            name,
+            language,
+            files,
+            draft.mode === "rename" ? draft.file.id : undefined,
+          );
+          if (!validated.ok) {
+            setError(validated.error);
             return;
           }
-          if (
-            files.some(
-              (file) =>
-                file.name === normalized && (draft.mode !== "rename" || file.id !== draft.file.id),
-            )
-          ) {
-            setError("A file with this name already exists.");
-            return;
+          switch (draft.mode) {
+            case "new":
+              onSubmit({ mode: "new", name: validated.name, programType });
+              break;
+            case "import":
+              if (language === "asm") {
+                if (!importTarget) {
+                  setTargetError("Choose an architecture.");
+                  return;
+                }
+                onSubmit({ mode: "import", name: validated.name, target: importTarget });
+              } else {
+                onSubmit({ mode: "import", name: validated.name });
+              }
+              break;
+            case "rename":
+            case "add":
+              onSubmit({ mode: draft.mode, name: validated.name });
           }
-          onSubmit({ ...draft.file, name: normalized, language, target });
         }}
       >
         <Stack gap="md">
@@ -64,7 +90,7 @@ export function FileDialog({
           {draft.mode === "new" && (
             <NativeSelect
               label="Program type"
-              value={language === "c" ? "c" : target}
+              value={programType}
               data={[
                 { value: "c", label: "C" },
                 ...TARGETS.map((item) => ({
@@ -73,9 +99,8 @@ export function FileDialog({
                 })),
               ]}
               onChange={(event) => {
-                const value = event.currentTarget.value;
-                setLanguage(value === "c" ? "c" : "asm");
-                setTarget(value === "c" ? "rv64" : (value as TargetId));
+                setProgramType(event.currentTarget.value as ProgramType);
+                setError(null);
               }}
             />
           )}
@@ -83,12 +108,16 @@ export function FileDialog({
             <NativeSelect
               label="Assembly architecture"
               required
-              defaultValue=""
+              value={importTarget ?? ""}
+              error={targetError}
               data={[
                 { value: "", label: "Choose an architecture", disabled: true },
                 ...TARGETS.map((item) => ({ value: item.id, label: item.displayName })),
               ]}
-              onChange={(event) => setTarget(event.currentTarget.value as TargetId)}
+              onChange={(event) => {
+                setImportTarget((event.currentTarget.value as TargetId) || null);
+                setTargetError(null);
+              }}
             />
           )}
           <Group justify="flex-end">

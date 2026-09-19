@@ -42,6 +42,21 @@ export function filename(name: string, language: Language): string {
       .trim() || "untitled";
   return `${stem}.${language === "c" ? "c" : "s"}`;
 }
+
+export function validateFilename(
+  name: string,
+  language: Language,
+  files: readonly Pick<ProgramFile, "id" | "name">[],
+  excludeId?: string,
+): { ok: true; name: string } | { ok: false; error: string } {
+  if (!name.trim()) return { ok: false, error: "Enter a filename." };
+  const normalized = filename(name, language);
+  if (files.some((file) => file.name === normalized && file.id !== excludeId)) {
+    return { ok: false, error: "A file with this name already exists." };
+  }
+  return { ok: true, name: normalized };
+}
+
 export function uniqueName(name: string, language: Language, files: ProgramFile[]): string {
   const normalized = filename(name, language);
   const stem = normalized.slice(0, -2);

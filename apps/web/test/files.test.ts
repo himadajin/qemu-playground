@@ -6,6 +6,7 @@ import {
   persistFiles,
   reorderFiles,
   uniqueName,
+  validateFilename,
 } from "../src/lib/files";
 import { saveSnippet, SNIPPET_STORAGE_KEY, type SnippetStorage } from "../src/lib/storage";
 function memory(): SnippetStorage {
@@ -17,6 +18,36 @@ function memory(): SnippetStorage {
     },
   };
 }
+describe("filename validation", () => {
+  const files = [{ id: "existing", name: "hello.c" }];
+
+  it("rejects blank input before normalization supplies a fallback", () => {
+    expect(validateFilename(" \t ", "c", [])).toEqual({
+      ok: false,
+      error: "Enter a filename.",
+    });
+  });
+
+  it("checks collisions after normalizing the name and fixing its extension", () => {
+    expect(validateFilename(" hello.s ", "c", files)).toEqual({
+      ok: false,
+      error: "A file with this name already exists.",
+    });
+    expect(validateFilename("path/entry.C", "asm", [])).toEqual({
+      ok: true,
+      name: "path-entry.s",
+    });
+  });
+
+  it("excludes only the renamed file from collision checks", () => {
+    expect(validateFilename("hello", "c", files, "existing")).toEqual({
+      ok: true,
+      name: "hello.c",
+    });
+    expect(validateFilename("hello", "c", files, "another").ok).toBe(false);
+  });
+});
+
 describe("file collection persistence", () => {
   it("applies an order without restoring removed files or dropping new files", () => {
     const first = createFile();

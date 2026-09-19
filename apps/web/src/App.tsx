@@ -33,11 +33,10 @@ import type { EditorSessions } from "./components/CodeEditor";
 import { ResultPane, type ResultTab } from "./components/ResultPane";
 import { ImportSourceButton } from "./components/ImportSourceButton";
 import { FileSidebar } from "./components/FileSidebar";
-import { FileDialog, type FileDraft } from "./components/FileDialog";
+import { FileDialog, type FileDraft, type FileDialogSubmission } from "./components/FileDialog";
 import { Toolbar, type ToolbarNotice } from "./components/Toolbar";
 import { requestRun } from "./lib/runApi";
 import { deriveResultView } from "./lib/runView";
-import { getSample } from "./lib/samples";
 import { buildShareUrl, readShareStateFromHash, type ShareState } from "./lib/share";
 import {
   createFile,
@@ -168,21 +167,37 @@ export function App() {
     file.name = uniqueName("untitled", "c", collection.files);
     setDraft({ mode: "new", file });
   }
-  function submitDraft(file: ProgramFile) {
-    if (!draft) return;
-    if (draft.mode === "rename")
-      setCollection((current) => ({
-        ...current,
-        files: current.files.map((item) =>
-          item.id === file.id ? { ...item, name: file.name } : item,
-        ),
-      }));
-    else {
-      add(draft.mode === "new" ? { ...file, code: getSample(file.language, file.target) } : file);
-      if (draft.mode === "add") {
+  function submitDraft(submission: FileDialogSubmission) {
+    if (!draft || draft.mode !== submission.mode) return;
+    switch (submission.mode) {
+      case "new":
+        add(
+          submission.programType === "c"
+            ? createFile("c", "rv64", submission.name)
+            : createFile("asm", submission.programType, submission.name),
+        );
+        break;
+      case "rename":
+        setCollection((current) => ({
+          ...current,
+          files: current.files.map((item) =>
+            item.id === draft.file.id ? { ...item, name: submission.name } : item,
+          ),
+        }));
+        break;
+      case "import":
+        add({
+          ...draft.file,
+          name: submission.name,
+          target: submission.target ?? draft.file.target,
+        });
+        break;
+      case "add":
+        if (!preview || preview.id !== draft.file.id) return;
+        add({ ...preview, name: submission.name });
         setPreview(null);
         clearHash();
-      }
+        break;
     }
     setDraft(null);
   }
