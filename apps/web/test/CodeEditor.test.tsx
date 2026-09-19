@@ -101,6 +101,28 @@ describe("CodeEditor integration", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  it("reconfigures the editor color scheme without replacing the view or editing state", () => {
+    const { rerender } = render(<CodeEditor {...defaults} colorScheme="light" />);
+    const view = currentView();
+    edit(view);
+    const value = view.state.doc.toString();
+    const replace = vi.spyOn(view, "setState");
+    view.scrollDOM.scrollTop = 60;
+    view.scrollDOM.scrollLeft = 30;
+
+    rerender(<CodeEditor {...defaults} value={value} colorScheme="dark" />);
+    expect(currentView()).toBe(view);
+    expect(view.state.facet(EditorView.darkTheme)).toBe(true);
+    expect(view.state.selection.main.head).toBe(3);
+    expect(undoDepth(view.state)).toBe(1);
+    expect(view.scrollDOM.scrollTop).toBe(60);
+    expect(view.scrollDOM.scrollLeft).toBe(30);
+
+    rerender(<CodeEditor {...defaults} value={value} colorScheme="light" />);
+    expect(view.state.facet(EditorView.darkTheme)).toBe(false);
+    expect(replace).not.toHaveBeenCalled();
+  });
+
   it("uses the latest onChange without rebuilding the view", () => {
     const previous = vi.fn();
     const next = vi.fn();

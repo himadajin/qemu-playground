@@ -1,6 +1,7 @@
 import type { Language, TargetId } from "@qemu-playground/shared";
 import { Badge, Tabs, Text } from "@mantine/core";
 import type { ResultView } from "../lib/runView";
+import type { EditorColorScheme } from "../editor/theme";
 import { LazyCodeEditor } from "./LazyCodeEditor";
 import { StatusBadge } from "./StatusBadge";
 
@@ -12,6 +13,7 @@ interface ResultPaneProps {
   onTabChange: (tab: ResultTab) => void;
   language: Language;
   target: TargetId;
+  colorScheme: EditorColorScheme;
 }
 
 interface LogSectionProps {
@@ -48,7 +50,14 @@ function LogSection({ title, text, truncated, placeholder }: LogSectionProps) {
  * Right-hand pane: one tab per kind of output, with the short status badge in
  * the header. Detail is always the raw log, never a rephrased summary.
  */
-export function ResultPane({ view, tab, onTabChange, language, target }: ResultPaneProps) {
+export function ResultPane({
+  view,
+  tab,
+  onTabChange,
+  language,
+  target,
+  colorScheme,
+}: ResultPaneProps) {
   const { output, build, assembly } = view;
 
   return (
@@ -123,6 +132,7 @@ export function ResultPane({ view, tab, onTabChange, language, target }: ResultP
                 value={assembly.code}
                 language="asm"
                 target={target}
+                colorScheme={colorScheme}
                 readOnly
                 ariaLabel="Generated assembly"
               />

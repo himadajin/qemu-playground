@@ -33,3 +33,7 @@ also keeps the editor's state.
 **Share** creates a URL containing the current code and settings. Opening that URL
 restores the input without running it. Saved snippets and share URLs contain code
 and run settings, not editor history or cursor position.
+
+Use the icon-only **Theme** button in the toolbar to choose **System**, **Light**, or
+**Dark**. **System** follows your operating system's color preference; the choice is
+remembered in this browser.
