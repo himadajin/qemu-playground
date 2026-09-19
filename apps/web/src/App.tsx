@@ -1,5 +1,5 @@
 import type { Language, TargetId } from "@qemu-playground/shared";
-import * as Tabs from "@radix-ui/react-tabs";
+import { Tabs } from "@mantine/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CodeEditor } from "./components/CodeEditor";
 import { ResultPane, type ResultTab } from "./components/ResultPane";
@@ -53,6 +53,7 @@ export function App() {
 
   const isNarrow = useMediaQuery(NARROW_QUERY);
   const running = phase.kind === "running";
+  const runInFlight = useRef(false);
   const view = useMemo(() => deriveResultView(phase, language), [phase, language]);
 
   const showNotice = useCallback((next: ToolbarNotice) => {
@@ -98,24 +99,30 @@ export function App() {
   );
 
   const handleRun = useCallback(async () => {
+    if (runInFlight.current) return;
+    runInFlight.current = true;
     // The previous result is dropped rather than kept for comparison, so what
     // is on screen always belongs to the code that was just submitted.
     setPhase({ kind: "running" });
     setResultTab("output");
     setMainTab("result");
 
-    const outcome = await requestRun({
-      language,
-      target,
-      code,
-      compileOptions,
-    });
+    try {
+      const outcome = await requestRun({
+        language,
+        target,
+        code,
+        compileOptions,
+      });
 
-    setPhase(
-      outcome.ok
-        ? { kind: "result", result: outcome.result }
-        : { kind: "failed", message: outcome.message },
-    );
+      setPhase(
+        outcome.ok
+          ? { kind: "result", result: outcome.result }
+          : { kind: "failed", message: outcome.message },
+      );
+    } finally {
+      runInFlight.current = false;
+    }
   }, [language, target, code, compileOptions]);
 
   const handleShare = useCallback(async () => {
@@ -209,29 +216,27 @@ export function App() {
       />
 
       {isNarrow ? (
-        <Tabs.Root
+        <Tabs
           className="workspace workspace--stacked"
           value={mainTab}
-          onValueChange={(value) => setMainTab(value as "code" | "result")}
+          onChange={(value) => {
+            if (value !== null) setMainTab(value as "code" | "result");
+          }}
+          keepMounted
+          keepMountedMode="display-none"
         >
-          <Tabs.List className="workspace__switch">
-            <Tabs.Trigger className="tab meta-label" value="code">
-              Code
-            </Tabs.Trigger>
-            <Tabs.Trigger className="tab meta-label" value="result">
-              Result
-            </Tabs.Trigger>
+          <Tabs.List className="workspace__switch" aria-label="Workspace">
+            <Tabs.Tab value="code">Code</Tabs.Tab>
+            <Tabs.Tab value="result">Result</Tabs.Tab>
           </Tabs.List>
-          {/* forceMount keeps the editor alive across switches; the headless
-              primitive leaves both panels mounted and visible, so the inactive
-              one is hidden by CSS on [data-state="inactive"]. */}
-          <Tabs.Content className="workspace__panel" value="code" forceMount>
+          {/* Activity mode cleans up effects when hidden, disposing Monaco and its undo history. */}
+          <Tabs.Panel className="workspace__panel" value="code">
             {editor}
-          </Tabs.Content>
-          <Tabs.Content className="workspace__panel" value="result" forceMount>
+          </Tabs.Panel>
+          <Tabs.Panel className="workspace__panel" value="result">
             {result}
-          </Tabs.Content>
-        </Tabs.Root>
+          </Tabs.Panel>
+        </Tabs>
       ) : (
         <main className="workspace">
           <div className="workspace__pane">{editor}</div>

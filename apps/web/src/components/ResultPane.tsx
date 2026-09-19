@@ -1,5 +1,5 @@
 import type { Language } from "@qemu-playground/shared";
-import * as Tabs from "@radix-ui/react-tabs";
+import { Badge, Tabs, Text } from "@mantine/core";
 import type { ResultView } from "../lib/runView";
 import { CodeEditor } from "./CodeEditor";
 import { StatusBadge } from "./StatusBadge";
@@ -25,8 +25,14 @@ function LogSection({ title, text, truncated, placeholder }: LogSectionProps) {
   return (
     <section className="log-section">
       <header className="log-section__head">
-        <span className="log-section__title meta-label">{title}</span>
-        {truncated === true && <span className="log-section__flag meta-label">truncated</span>}
+        <Text size="xs" c="dimmed">
+          {title}
+        </Text>
+        {truncated === true && (
+          <Badge size="xs" color="orange" variant="light">
+            truncated
+          </Badge>
+        )}
       </header>
       {empty ? (
         <p className="log-section__placeholder">{placeholder}</p>
@@ -45,27 +51,28 @@ export function ResultPane({ view, tab, onTabChange, language }: ResultPaneProps
   const { output, build, assembly } = view;
 
   return (
-    <Tabs.Root
+    <Tabs
       className="result"
       value={tab}
-      onValueChange={(value) => onTabChange(value as ResultTab)}
+      onChange={(value) => {
+        if (value !== null) onTabChange(value as ResultTab);
+      }}
+      keepMounted={false}
     >
       <div className="result__head">
-        <Tabs.List className="result__tabs">
-          <Tabs.Trigger className="tab meta-label" value="output">
-            Output
-          </Tabs.Trigger>
-          <Tabs.Trigger className="tab meta-label" value="build">
-            Build
-          </Tabs.Trigger>
-          <Tabs.Trigger className="tab meta-label" value="assembly" disabled={language === "asm"}>
+        <Tabs.List className="result__tabs" aria-label="Results">
+          <Tabs.Tab value="output">Output</Tabs.Tab>
+          <Tabs.Tab value="build">Build</Tabs.Tab>
+          <Tabs.Tab value="assembly" disabled={language === "asm"}>
             Assembly
-          </Tabs.Trigger>
+          </Tabs.Tab>
         </Tabs.List>
-        {view.badge !== null && <StatusBadge kind={view.badge} />}
+        <span role="status" aria-live="polite">
+          {view.badge !== null && <StatusBadge kind={view.badge} />}
+        </span>
       </div>
 
-      <Tabs.Content className="result__panel" value="output">
+      <Tabs.Panel className="result__panel" value="output">
         <div className="result__state">
           <span>{output.state}</span>
           {output.exit !== null && <span className="result__exit">{output.exit}</span>}
@@ -93,18 +100,18 @@ export function ResultPane({ view, tab, onTabChange, language }: ResultPaneProps
               : "The program wrote nothing to stderr."
           }
         />
-      </Tabs.Content>
+      </Tabs.Panel>
 
-      <Tabs.Content className="result__panel" value="build">
+      <Tabs.Panel className="result__panel" value="build">
         <LogSection
           title="compiler output"
           text={build.log}
           truncated={build.truncated}
           placeholder={build.placeholder ?? ""}
         />
-      </Tabs.Content>
+      </Tabs.Panel>
 
-      <Tabs.Content className="result__panel result__panel--flush" value="assembly">
+      <Tabs.Panel className="result__panel result__panel--flush" value="assembly">
         {assembly.kind === "code" ? (
           <div className="assembly">
             {assembly.truncated && (
@@ -122,7 +129,7 @@ export function ResultPane({ view, tab, onTabChange, language }: ResultPaneProps
         ) : (
           <p className="log-section__placeholder">{assembly.message}</p>
         )}
-      </Tabs.Content>
-    </Tabs.Root>
+      </Tabs.Panel>
+    </Tabs>
   );
 }

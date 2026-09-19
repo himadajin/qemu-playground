@@ -1,23 +1,19 @@
+import { Badge } from "@mantine/core";
 import { STATUS_BADGE_LABEL, type StatusBadgeKind } from "../lib/runView";
 
-/**
- * The UI is achromatic, so severity is carried by ink weight instead of hue:
- * ordinary states sit on a hairline border at 70% ink, failures get a full-ink
- * border and full-ink text.
- */
-const BADGE_SEVERITY: Record<StatusBadgeKind, "normal" | "error"> = {
-  success: "normal",
-  running: "normal",
-  compile_error: "error",
-  runtime_error: "error",
-  timeout: "error",
-  error: "error",
+const BADGE_COLOR: Record<StatusBadgeKind, string> = {
+  success: "green",
+  running: "blue",
+  compile_error: "red",
+  runtime_error: "red",
+  timeout: "orange",
+  error: "red",
 };
 
 export function StatusBadge({ kind }: { kind: StatusBadgeKind }) {
   return (
-    <span className={`status-badge status-badge--${BADGE_SEVERITY[kind]} meta-label`}>
+    <Badge size="sm" color={BADGE_COLOR[kind]} tt="none" style={{ flexShrink: 0 }}>
       {STATUS_BADGE_LABEL[kind]}
-    </span>
+    </Badge>
   );
 }

@@ -1,115 +1,114 @@
-# Web フロントエンド挙動仕様
+# Web frontend behavior
 
-単一画面 playground の確定挙動。コード入力、実行操作、結果表示の 3 要素が 1 画面で完結する。
+A single-screen playground for entering code, running it, and inspecting results.
 
-## 画面構成
+## Layout
 
-- デスクトップ幅では、画面上部に細いツールバーを置き、その下を左右 2 ペイン
-  (左: コードエディタ、右: 結果ペイン)に分ける。ページ全体を長くスクロールさせず、画面高を活用する。
-- 狭い画面では、メイン領域を `Code / Result` の二択タブに畳む。`Code` はツールバーとエディタ、
-  `Result` は結果ペインを表示する。共有 URL を開いたユーザーがコードと結果を行き来できることを重視する。
-- 常設のサイドバー、ファイルツリー、設定パネルは置かない。保存 UI は `Open` / `Save` から
-  必要時だけ開くダイアログに留める。
-- モバイルは編集体験を作り込まないが、コードが読める、結果が読める、Run できる、
-  共有 URL で復元された内容を確認できる、という基本体験は壊さない。
+- Above 900px, a compact toolbar sits above two equal-width panes: source code on the left
+  and results on the right. The workspace fills the available viewport height; panes scroll
+  independently rather than extending the entire page.
+- At 900px or below, the workspace uses `Code / Result` tabs with the toolbar always visible.
+  Switching these tabs preserves the source editor instance, including editing state and undo history.
+- Mobile supports reading code and results, running code, and inspecting restored share URLs.
+  It does not provide a separate mobile editing interface.
+- There is no permanent sidebar, file tree, or settings panel. Saved snippets are managed through
+  `Open` and `Save` dialogs.
 
-## ツールバー
+## Toolbar
 
-- 置く操作は、言語切替、ターゲット切替、コンパイルオプション入力、`Run`、`Open`、`Save`、`Share` のみ。
-- `Run` は最も強い主操作。`Share` は現在のコード、言語、ターゲット、コンパイルオプションを
-  URL に埋め込む一級操作として扱う。
-- コンパイルオプションは optional な入力として常に見える入力欄に置く。
-  空欄のまま Run できる挙動と placeholder(`-O2` のような指定例)で未指定可を伝え、
-  説明文やツールチップは追加しない。
+- The controls are language, target, compile options, `Run`, `Open`, `Save`, and `Share`.
+- Language uses a segmented control; target uses a non-clearable select.
+- `Run` is the primary action. `Share` encodes the current code, language, target, and compiler options.
+- Compile options are always visible and optional. The placeholder gives an example (`-O2`);
+  there is no additional tooltip or explanatory text.
+- During execution, Run displays a loading indicator and is disabled. An in-flight guard also
+  prevents duplicate submissions before the disabled state renders.
 
-## 結果ペイン
+## Results
 
-- `Output / Build / Assembly` のタブを持ち、Run 後は必ず `Output` を前面に出す。
-- `Output` は stdout、stderr、終了コード、実行状態を読む場所。`Build` はコンパイルログを読む場所。
-  `Assembly` は C 入力時に生成アセンブリを readonly で読む場所とし、
-  アセンブリ入力時は誤解を生まない無効状態または空状態にする。
-- コンパイルエラー、実行時エラー、タイムアウトの詳細は結果ペイン内のログとして表示し、
-  ヘッダーには短い status badge だけを出す。
+- Result tabs are `Output / Build / Assembly`. Run selects `Output` and, on narrow screens, `Result`.
+- Each Run replaces the previous result with the current running state.
+- `Output` displays stdout, stderr, exit code or signal, execution state, and failure details.
+  `Build` displays compiler output. Truncated output is explicitly marked.
+- `Assembly` displays generated C assembly in a read-only editor. It is disabled for assembly input.
+  Changing to assembly input while that tab is selected displays `Output` instead.
+- Inactive result panels unmount. The generated assembly editor initializes only when its tab is
+  displayed and assembly is available; its cursor and scroll position are not retained on tab changes.
+- Error details remain in the logs, with a short status badge in the result header. Status changes
+  are announced through a polite live region.
 
-## Status badge
+## Status badges
 
-`success` / `compile error` / `runtime error` / `timeout` / `running` / `error` の 6 値。
+The labels are `success`, `compile error`, `runtime error`, `timeout`, `running`, and `error`.
 
-- `success`〜`timeout` は HTTP 200 の結果ステータスに対応する
-  ([../contracts/run-protocol.md](../contracts/run-protocol.md))。
-  非ゼロ終了コードの正常終了は `success` とし、判断は終了コードの表示に委ねる。
-- `running` は Run の実行中を表す。
-- `error` は同時実行上限超過、サーバー内部エラー、通信失敗など、Run 自体を完了できなかった場合に使い、
-  理由は `Output` タブのログとして表示する。
+- The first four correspond to HTTP 200 result statuses in the
+  [run protocol](../contracts/run-protocol.md). A normal exit with a nonzero code remains `success`;
+  the exit code is displayed separately.
+- `running` indicates an in-flight Run.
+- `error` covers an unsuccessful request, including capacity limits, server errors, and network
+  failures. Its reason appears in Output.
+- Colors supplement the labels: green for success, blue for running, orange for timeout, and red
+  for compile, runtime, and request errors.
 
-## Run 中の挙動
+## Loading and editors
 
-- `Run` ボタンは実行中表示になり、二重送信を避けるため無効化する。
-- 結果ペインは `Output` に切り替わり、前回結果は比較用に残さず現在の Run の実行中状態に置き換える
-  (古い結果と現在のコードの結果が混ざって見える状態を避ける)。
+- The toolbar and workspace render before Monaco loads. A fixed-size editor shell with Mantine
+  Skeleton placeholders reserves the editor's space and avoids layout shifts.
+- Monaco is loaded lazily and uses its built-in `vs` theme, Geist Mono, and 13px code text.
+- Generated assembly is read-only. Source editing remains available while a Run is in progress.
+- An editor loading failure displays an accessible message asking the user to reload.
 
-## 初期ロード
+## Visual design
 
-- ツールバーと画面骨格を先に表示する。エディタ領域は固定サイズの editor shell と
-  軽い skeleton 表示で埋め、Monaco の遅延ロードでレイアウトシフトやちらつきを起こさない。
-  凝ったローディング演出は作らない。
+- Mantine provides standard component colors, radii, shadows, focus states, and interaction feedback.
+  Light mode is fixed; there is no dark-mode control.
+- The centralized theme retains Geist for UI text, Noto Sans JP as its Japanese fallback, and
+  Geist Mono for code and logs. Controls use compact standard sizes; code and logs use 13px text.
+- Mantine SegmentedControl, Select, TextInput, Button, Tabs, Modal, Badge, and Skeleton provide the
+  common controls. Custom CSS handles playground layout, pane sizing, scrolling, log formatting,
+  and editor positioning.
+- Monaco widgets are contained in the app's stacking context so that dropdowns and modal portals
+  render above them.
 
-## 視覚設計
+## Dialogs and keyboard access
 
-- ライトモード固定。ダークモード切替は持たない。
-- 紙にインクで刷った無彩色のパレットに限定する。紙 `#ffffff`、インク `#171717`、
-  面 `#f5f5f5`、境界線 `#ebebeb` の 4 色で構成し、中間の強弱はインクの不透明度
-  35% / 50% / 70% だけで作る。強調色も状態色も持たない。
-- グラデーション、影、角丸は使わず、単色の面と 1px の境界線で構成する。
-  動きは色・境界線・背景色の遷移(150ms 前後)だけとし、変形や移動は行わない。
-  フォーカスリングは実線 2px のインク色 outline。
-- 書体は本文・UI が Geist(日本語は Noto Sans JP)、メタ情報とコードが Geist Mono。
-  ウェイトは 400 と 600 のみで、斜体は使わない。メタラベルは 11px の mono 大文字・
-  字間 0.1em の単一スケールに統一し、区別はインクの不透明度だけで付ける。
-- 情報密度は開発ツールとして高めにする(操作系 13px、ログとコードは 13px mono)。
-  余白は機能のまとまりを示すために使う。
-- 状態の表現は語彙を固定する。実線 2px のアンダーラインは現在地(選択中のタブ、
-  選択中の言語)、hover 時の破線アンダーラインは移動できることを表す。
-  面と境界線はその場で作用するボタンにだけ与え、通常は境界線 + インク 70%、
-  hover で面 `#f5f5f5` + インク 100% にする。インクを面にした反転表示は `Run` だけに使う。
-- Status badge はメタラベルの文字表示で、深刻さは濃度と境界線で表す。
-  `success` / `running` は境界線 `#ebebeb` + インク 70%、
-  `compile error` / `runtime error` / `timeout` / `error` は境界線・文字ともインク 100%。
-- ダイアログは背景を半透明の紙 + blur で覆い、パネルはインクの枠で囲む。
-  奥行きは影ではなくこのすりガラスと枠線で表す。
-- UI 基盤は headless な Radix primitives(Tabs、Dialog、Select)と素の HTML 要素で、
-  見た目は自前の CSS(`apps/web/src/styles/`、トークンは `tokens.css`)で与える。
-  コードエディタは Monaco Editor を組み込みの `vs` テーマ + Geist Mono の指定で使う。
-  独自コンポーネントは toolbar、editor shell、result pane、status badge など
-  playground 固有の構造に限定し、
-  フォーカス状態、キーボード操作、ラベル付けは primitives のアクセシビリティ前提を崩さない。
+- Controls have accessible names and support keyboard navigation. Tabs activate with arrow keys.
+- Dialogs trap focus, close with Escape or an outside click, and return focus to their opener.
+- Save initially focuses the snippet name. Whitespace-only names cannot be saved; names are trimmed.
+  Saving an existing name replaces that snippet without a separate confirmation.
+- Open initially focuses the first saved snippet, or Close when the list is empty. A snippet can be
+  opened or deleted with its own named control. The empty state reads `Nothing saved yet.`
 
-## API 呼び出し
+## API requests
 
-- 同一オリジンの相対パス `POST /api/run` のみを呼ぶ。開発時は Vite の proxy が `http://localhost:8080` へ中継する。
-- リクエスト構築・レスポンス解釈は `@qemu-playground/shared` の Zod スキーマを通す。
-- HTTP 200 の 4 ステータスは結果として表示し、400/429/500 と通信失敗は status badge `error` +
-  Output タブへの理由表示として扱う。
+- The frontend calls only the same-origin `POST /api/run`. Vite proxies development requests to
+  `http://localhost:8080`.
+- Request construction and response interpretation use the shared Zod schemas.
+- HTTP 200 statuses are results; HTTP 400/429/500 and transport failures produce an `error` badge
+  and explanatory Output log.
 
-## 共有 URL
+## Share URLs
 
-- 形式: `<origin>/#s=<payload>`。payload は `JSON.stringify({v, l, t, c, o})`
-  (フォーマット版数、言語、ターゲット、コード、コンパイルオプション)を
-  lz-string の `compressToEncodedURIComponent` で圧縮したもの。現在の版数は 1。
-- フラグメントを使うため、共有内容はサーバーへ送信されない。
-- URL 全長の上限は 2000 文字。超過時は URL を作らずエラーを通知する(暗黙の切り詰めはしない)。
-- URL を開くとフォーム(言語、ターゲット、コード、コンパイルオプション)が復元される。自動実行はしない。
-- 解釈できない payload は無視して通常の初期状態で開く。
+- Format: `<origin>/#s=<payload>`. The payload is `JSON.stringify({v, l, t, c, o})`, compressed with
+  lz-string's `compressToEncodedURIComponent`. These fields represent format version, language,
+  target, code, and compiler options. The format version is 1.
+- The fragment is not sent to the server. Opening a URL restores the form without running it.
+  Invalid payloads are ignored in favor of the normal initial state.
+- The full URL limit is 2000 characters. Exceeding it displays an error without truncating the data
+  or changing the address bar.
+- Share updates the address bar and copies the URL to the clipboard. If copying fails, feedback
+  directs the user to the URL in the address bar.
 
-## ローカル保存
+## Local snippets
 
-- 保存先は LocalStorage のみ。サーバーには何も保存しない。
-- 保存単位はスニペット(名前、言語、ターゲット、コード、コンパイルオプション)。
-- `Save` で名前を付けて保存、`Open` の一覧から読み込み・削除。ダイアログのみで常設 UI は持たない。
+- Snippets live only in LocalStorage under `qemu-playground:snippets:v1`.
+- Each stores a name, language, target, code, and compiler options, plus its ID and save time.
+- Saving under an existing name retains its ID and updates its contents. Open lists the newest
+  snippets first and supports loading and deletion. Corrupt entries are skipped.
 
-## サンプルコード
+## Samples
 
-- 言語(C / asm)×ターゲット(rv64 / aarch64)の 4 組。初期表示は RV64 の C hello world。
-- asm サンプルは `_start` + write/exit システムコール直書き(stdout へ 1 行出力し exit code 42)。
-- 言語・ターゲット切替時、現在のコードがいずれかのサンプルと完全一致する場合のみ対応するサンプルへ差し替える
-  (ユーザーの編集内容は上書きしない)。
+- There are four samples: C / assembly combined with RV64 / AArch64. The default is RV64 C hello world.
+- Assembly samples use `_start` and direct write/exit syscalls, writing one line and exiting with 42.
+- Language or target changes replace the code only if it exactly matches one of the bundled samples.
+  User edits are preserved.
