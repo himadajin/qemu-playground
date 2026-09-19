@@ -1,6 +1,7 @@
 import type { Language, TargetId } from "@qemu-playground/shared";
 import { Tabs } from "@mantine/core";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { ResizableWorkspace } from "./components/ResizableWorkspace";
 import { CodeEditor } from "./components/CodeEditor";
 import { ResultPane, type ResultTab } from "./components/ResultPane";
 import { OpenDialog, SaveDialog } from "./components/SnippetDialogs";
@@ -231,10 +232,7 @@ export function App() {
           </Tabs.Panel>
         </Tabs>
       ) : (
-        <main className="workspace">
-          <div className="workspace__pane">{editor}</div>
-          <div className="workspace__pane">{result}</div>
-        </main>
+        <ResizableWorkspace code={editor} result={result} />
       )}
 
       <SaveDialog

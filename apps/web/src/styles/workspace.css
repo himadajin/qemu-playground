@@ -24,13 +24,53 @@ body {
   display: flex;
 }
 .workspace__pane {
-  flex: 1 1 50%;
+  flex: 1 1 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
-.workspace__pane + .workspace__pane {
-  border-left: 1px solid var(--mantine-color-default-border);
+.workspace__pane--code {
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+.workspace__divider {
+  position: relative;
+  flex: 0 0 12px;
+  cursor: col-resize;
+  touch-action: none;
+  background: var(--mantine-color-body);
+}
+.workspace__divider::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 1px;
+  margin: auto;
+  background: var(--mantine-color-default-border);
+}
+.workspace__divider::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 4px;
+  height: 32px;
+  margin: auto;
+  border-radius: var(--mantine-radius-sm);
+  background: var(--mantine-color-dimmed);
+}
+.workspace__divider:hover::after,
+.workspace__divider:focus-visible::after,
+.workspace--resizing .workspace__divider::after {
+  background: var(--mantine-primary-color-filled);
+}
+.workspace__divider:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: -2px;
+}
+.workspace--resizing,
+.workspace--resizing * {
+  cursor: col-resize !important;
+  user-select: none;
 }
 .workspace--stacked {
   flex-direction: column;

@@ -4,9 +4,16 @@ A single-screen playground for entering code, running it, and inspecting results
 
 ## Layout
 
-- Above 900px, a compact toolbar sits above two equal-width panes: source code on the left
+- Above 900px, a compact toolbar sits above two resizable panes: source code on the left
   and results on the right. The workspace fills the available viewport height; panes scroll
   independently rather than extending the entire page.
+- Desktop panes start at 50:50, with a minimum width of 320px each. Drag the central divider
+  using a mouse or touch, or focus it with Tab and use Left/Right arrows to adjust by 16px.
+  The divider has a visible grip and a 12px interaction area. Neither pane can collapse.
+- The preferred split ratio is stored in LocalStorage under `qemu-playground:workspace-ratio:v1`.
+  Reloading restores it; viewport changes constrain the displayed split to the minimum widths
+  without replacing the preference. Invalid or unavailable storage falls back to equal widths.
+  There is no reset-to-equal-width action.
 - At 900px or below, the workspace uses `Code / Result` tabs with the toolbar always visible.
   Switching these tabs preserves the source editor instance, including editing state and undo history.
 - Mobile supports reading code and results, running code, and inspecting restored share URLs.
