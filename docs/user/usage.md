@@ -55,11 +55,22 @@ file. **Download** saves one file's code without its execution settings.
 
 ## Running and inspecting results
 
-On wide screens, **Run** is in the result-panel header. On narrow screens it stays
+On wide screens, **Run** is in the results-sidebar header. This sidebar starts open at
+400px and can be resized down to 320px. **Collapse results** hides it, including Run;
+**Expand results** on the remaining icon rail restores it. Its width and open/closed state
+are saved for all files in this browser. Closing it preserves results and the selected tab.
+
+The two sidebar widths are independent: resizing one adjusts the editor while keeping the
+other fixed. Each divider stops before the editor becomes narrower than 320px. You can
+also focus a divider and use Left/Right arrows to move it by 16px, or Home/End to set that
+sidebar's minimum/maximum width. If the window becomes too small, the sidebars temporarily
+shrink; widening the window restores your preferred widths.
+
+On narrow screens, **Run** stays
 beside the **Code / Result** tabs and switches to Result when pressed. The file
 sidebar becomes a drawer opened from the button to the left of these tabs. It overlays
 the editor without shrinking it. Select a file, create or import a program, press Escape,
-or click the background or **Close sidebar** to close it. Your desktop sidebar preference
+or click the background or **Close sidebar** to close it. Your desktop sidebar preferences
 is preserved when returning to a wider window.
 
 Only one program can run at a time. You can edit or switch files while it runs;

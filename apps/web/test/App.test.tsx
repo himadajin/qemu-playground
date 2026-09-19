@@ -18,6 +18,7 @@ import { buildShareUrl } from "../src/lib/share";
 import { saveSnippet } from "../src/lib/storage";
 import { loadFiles } from "../src/lib/files";
 import { theme } from "../src/theme";
+import { RESULTS_OPEN_STORAGE_KEY } from "../src/components/ProgramLayout";
 
 // Replace only the editor engine: the real app, controls, protocol, and storage run together.
 // DOM identity of the textarea detects accidental source-editor unmounts.
@@ -422,6 +423,81 @@ describe("playground interactions", () => {
     expect(screen.getByRole("button", { name: "imported.c" })).toBeVisible();
     expect(loadFiles(localStorage).sidebarOpen).toBe(true);
     mounted.unmount();
+  });
+
+  it("hides Run with the results sidebar and retains the editors and selected result tab", async () => {
+    const user = userEvent.setup();
+    mount();
+    const editor = source();
+    await user.click(screen.getByRole("button", { name: "Run" }));
+    await screen.findByText("hello result");
+    await user.click(screen.getByRole("tab", { name: "Assembly" }));
+    const assembly = screen.getByRole("textbox", { name: "Generated assembly" });
+    assembly.scrollTop = 120;
+    await user.click(screen.getByRole("button", { name: "Collapse results" }));
+    expect(screen.queryByRole("button", { name: "Run" })).toBeNull();
+    expect(screen.queryByRole("tablist", { name: "Results" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Expand results" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    expect(assembly).toBeInTheDocument();
+    expect(source()).toBe(editor);
+    expect(editorDisposed).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Expand results" }));
+    expect(screen.getByRole("button", { name: "Run" })).toBeVisible();
+    expect(screen.getByRole("tab", { name: "Assembly" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("textbox", { name: "Generated assembly" })).toBe(assembly);
+    expect(assembly.scrollTop).toBe(120);
+  });
+
+  it("keeps the results sidebar closed across files, reloads, and execution completion", async () => {
+    let finish!: (response: Response) => void;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    const mounted = mount();
+    await user.click(screen.getByRole("button", { name: "Run" }));
+    await user.click(screen.getByRole("button", { name: "Collapse results" }));
+    await act(async () => {
+      finish(response(result));
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole("button", { name: "Run" })).toBeNull();
+    expect(localStorage.getItem(RESULTS_OPEN_STORAGE_KEY)).toBe("false");
+    await user.click(screen.getByRole("button", { name: "New file" }));
+    await user.click(
+      within(screen.getByRole("dialog", { name: "New file" })).getByRole("button", {
+        name: "New file",
+      }),
+    );
+    expect(screen.getByRole("button", { name: "Expand results" })).toBeVisible();
+    mounted.unmount();
+    mount();
+    expect(screen.getByRole("button", { name: "Expand results" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Run" })).toBeNull();
+  });
+
+  it("keeps narrow-screen Run available independently of the desktop results preference", async () => {
+    localStorage.setItem(RESULTS_OPEN_STORAGE_KEY, "false");
+    matchMediaMock.mockImplementation((query) => ({
+      ...createMediaQueryList(query),
+      matches: query === "(max-width: 1080px)",
+    }));
+    const user = userEvent.setup();
+    const mounted = mount();
+    await user.click(screen.getByRole("button", { name: "Run" }));
+    expect(await screen.findByText("hello result")).toBeVisible();
+    expect(localStorage.getItem(RESULTS_OPEN_STORAGE_KEY)).toBe("false");
+    mounted.unmount();
+    matchMediaMock.mockImplementation(createMediaQueryList);
+    mount();
+    expect(screen.getByRole("button", { name: "Expand results" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Run" })).toBeNull();
   });
 
   it("creates, renames, duplicates, and deletes files, preserving an empty collection", async () => {

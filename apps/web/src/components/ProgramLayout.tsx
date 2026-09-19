@@ -10,11 +10,13 @@ import {
   Tabs,
 } from "@mantine/core";
 import { IconLayoutSidebarLeftExpand } from "@tabler/icons-react";
+import { useLocalStorage } from "@mantine/hooks";
 import type { ReactNode } from "react";
 import { ImportSourceButton } from "./ImportSourceButton";
-import { ResizableSidebarLayout } from "./ResizableSidebarLayout";
-import { ResizableWorkspace } from "./ResizableWorkspace";
+import { SidebarLayout } from "./SidebarLayout";
+import { Sidebar, SidebarToggle } from "./Sidebar";
 import { FileSidebarRail } from "./FileSidebarRail";
+export const RESULTS_OPEN_STORAGE_KEY = "qemu-playground:results-open:v1";
 interface Props {
   narrow: boolean;
   sidebarOpen: boolean;
@@ -49,6 +51,14 @@ export function ProgramLayout({
   onNew,
   onImport,
 }: Props) {
+  const [resultsOpen, setResultsOpen] = useLocalStorage({
+    key: RESULTS_OPEN_STORAGE_KEY,
+    defaultValue: true,
+    getInitialValueInEffect: false,
+    sync: false,
+    serialize: String,
+    deserialize: (value) => value !== "false",
+  });
   const workbench = (
     <div className="workbench__main">
       {narrow && !hasActive && (
@@ -117,7 +127,7 @@ export function ProgramLayout({
           </Tabs.Panel>
         </Tabs>
       ) : (
-        <ResizableWorkspace code={editor} result={result} />
+        <main className="workspace workspace__panel">{editor}</main>
       )}
     </div>
   );
@@ -128,39 +138,55 @@ export function ProgramLayout({
         {narrow ? (
           workbench
         ) : (
-          <ResizableSidebarLayout
+          <SidebarLayout
             opened={sidebarOpen}
             sidebar={
-              <Flex
-                component="aside"
-                direction="column"
-                className="sidebar"
-                data-opened={sidebarOpen}
-                h="100%"
-                w="100%"
-                mih={0}
+              <Sidebar
+                side="left"
+                opened={sidebarOpen}
+                contentId="desktop-files"
+                actions={
+                  <FileSidebarRail
+                    opened={sidebarOpen}
+                    onToggle={onToggleSidebar}
+                    onNew={onNew}
+                    onImport={onImport}
+                  />
+                }
               >
-                <FileSidebarRail
-                  opened={sidebarOpen}
-                  onToggle={onToggleSidebar}
-                  onNew={onNew}
-                  onImport={onImport}
-                />
-                <Box
-                  id="desktop-files"
-                  className="sidebar__files"
-                  flex={1}
-                  mih={0}
-                  inert={!sidebarOpen}
-                  aria-hidden={!sidebarOpen}
-                >
-                  {sidebar}
-                </Box>
-              </Flex>
+                {sidebar}
+              </Sidebar>
+            }
+            results={
+              hasActive
+                ? {
+                    opened: resultsOpen,
+                    content: (
+                      <Sidebar
+                        side="right"
+                        opened={resultsOpen}
+                        contentId="desktop-results"
+                        actions={
+                          <div className="sidebar__actions">
+                            <SidebarToggle
+                              side="right"
+                              opened={resultsOpen}
+                              controls="desktop-results"
+                              label={resultsOpen ? "Collapse results" : "Expand results"}
+                              onToggle={() => setResultsOpen((value) => !value)}
+                            />
+                          </div>
+                        }
+                      >
+                        {result}
+                      </Sidebar>
+                    ),
+                  }
+                : undefined
             }
           >
             {workbench}
-          </ResizableSidebarLayout>
+          </SidebarLayout>
         )}
       </Flex>
       <Drawer

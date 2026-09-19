@@ -32,18 +32,27 @@ checks, manual deployment, and infrastructure setup, see
 
 The sidebar manages independent, single-source programs. Above 1080px, a persistent
 sidebar uses 44px for icons or starts at 240px when expanded. Drag its divider to choose
-any width from 160px to 420px; the width and labels transition smoothly with reduced-motion
-support, and the width is saved under `qemu-playground:sidebar-width:v1`. Collapsed labels
+any width from 160px to 420px; resizing is immediate, labels respect reduced-motion
+preferences, and the width is saved under `qemu-playground:sidebar-width:v1`. Collapsed labels
 appear in hover/focus tooltips. At 1080px or below, a button beside Code / Result / Run
 opens a fixed 280px overlay drawer with the same vertical layout. Files have unique names,
 fixed language and assembly architecture, and per-file compiler options and C target.
 Creation, rename, duplication, deletion, source import/download, and accessible manual
 reordering are supported. There are no folders or multi-file builds.
 
+The desktop results sidebar starts open at 400px, has a 320px minimum, and collapses to a
+44px rail. Run remains inside it and is unavailable while it is closed. `SidebarLayout`
+uses one Mantine splitter hook for both independent pixel widths and the flexible editor.
+Dragging changes only the adjacent sidebar and editor, preserving at least 320px for the
+editor; width persistence occurs on release. Keyboard resizing saves immediately. A smaller
+viewport temporarily constrains both sidebar widths without replacing their preferences.
+
 `lib/files.ts` manages the collection stored automatically under
 `qemu-playground:files:v1`: file records, manual order, last selected saved file,
 and desktop sidebar open/closed preference. The independent sidebar width preference
-uses `qemu-playground:sidebar-width:v1`. Files contain ID, name, language, target,
+uses `qemu-playground:sidebar-width:v1`. Results width and open state use
+`qemu-playground:results-width:v1` and `qemu-playground:results-open:v1`, shared across files.
+Files contain ID, name, language, target,
 code, and compiler options. An explicitly empty collection remains empty on reload.
 
 When the new key is absent, `lib/storage.ts` reads legacy

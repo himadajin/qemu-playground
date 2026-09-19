@@ -4,25 +4,31 @@ A single-screen playground for entering code, running it, and inspecting results
 
 ## Layout
 
-- Above 1080px, the sidebar starts at 240px expanded and can be resized from 160px to
-  420px, or collapsed to a 44px icon rail, beside resizable source and result panes.
+- Above 1080px, independent file and results sidebars flank the source editor. The file
+  sidebar starts at 240px expanded and can be resized from 160px to 420px, or collapsed
+  to a 44px icon rail.
   Its width is stored under `qemu-playground:sidebar-width:v1`; invalid stored widths
   are clamped for display without being rewritten until the next resize. Collapse
   sidebar, New file, and Import files are stacked above the Files heading and full-width
   list. Only the list scrolls; actions stay at the top.
 - Collapsed actions show icons with hover/focus tooltips. Expanded actions add labels;
-  the whole row is clickable. Icon positions stay fixed during the 180ms width and label
-  transition. Reduced-motion preferences disable this transition. Hidden files cannot
+  the whole row is clickable. Width changes take effect immediately; labels transition
+  over 180ms unless reduced motion is enabled. Hidden sidebar content cannot
   receive focus. The open/closed preference is saved; creating or importing a program
   does not change it.
-- Source and result panes start at 50:50, with a minimum width of 320px each. Drag the central
-  divider, or focus it and use Left/Right arrows to adjust by 16px. The divider has a 12px hit
-  area and a visible focus indicator. Neither pane can collapse.
-- The desktop sidebar divider uses the same 12px hit area and 16px keyboard step. It is
-  available while the sidebar is expanded; collapsing the sidebar preserves its preferred
-  width and restores it on expansion. Double-clicking either divider does not reset its size.
-- The preferred split ratio is stored under `qemu-playground:workspace-ratio:v1`. Viewport
-  changes constrain the displayed ratio without replacing the preference.
+- The results sidebar starts open at 400px, with a minimum width of 320px. It can collapse
+  to a 44px rail with an Expand results button. Its pixel width and open state are saved
+  under `qemu-playground:results-width:v1` and `qemu-playground:results-open:v1`, independently
+  of the selected file. Hidden results stay mounted, preserving the selected tab and viewer.
+- The editor fills the remaining width, with a minimum of 320px. Resizing either sidebar
+  keeps the opposite sidebar fixed and stops when the editor reaches its minimum. Shrinking
+  the window temporarily reduces each sidebar's space above its minimum proportionally;
+  widening it restores the preferred widths without rewriting them.
+- Both dividers have a 12px hit area and visible keyboard focus. Left/Right arrows move
+  the divider by 16px; Home/End set the associated sidebar to its minimum/maximum width.
+  Dividers are available only for expanded sidebars. Expansion restores the preferred width,
+  subject to available space. Double-clicking does not reset it. Dragging resizes content
+  continuously and saves the width once on release; keyboard changes save immediately.
 - At 1080px or below, a Show files button shares the Code / Result / Run bar. Files open
   in an initially closed overlay drawer without resizing the editor. The drawer is 280px
   wide, capped at the viewport width minus 32px, and uses the same actions-above-list layout.
@@ -33,7 +39,8 @@ A single-screen playground for entering code, running it, and inspecting results
   architecture, and an always-editable compiler-options input. On narrow screens, the options
   input occupies a second row. There is no separate settings screen.
 - On wide screens, Run sits in the result header beside the current filename and target.
-  Share and Theme sit in the global header.
+  Closing the results sidebar hides Run; reopening it makes execution available again.
+  Execution completion never opens a closed sidebar. Share and Theme sit in the global header.
 
 ## Files and operations
 
