@@ -1,112 +1,39 @@
-import {
-  TARGETS,
-  getTargetDefinition,
-  type RunResult,
-  type TargetId,
-} from "@qemu-playground/shared";
-import {
-  ActionIcon,
-  Alert,
-  Button,
-  Center,
-  CloseButton,
-  EmptyState,
-  Drawer,
-  Group,
-  Modal,
-  NativeSelect,
-  Tabs,
-  Text,
-  TextInput,
-  useComputedColorScheme,
-} from "@mantine/core";
-import {
-  IconLayoutSidebarLeftCollapse,
-  IconLayoutSidebarLeftExpand,
-  IconPlayerPlay,
-} from "@tabler/icons-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useClipboard, useMediaQuery } from "@mantine/hooks";
-import { ResizableWorkspace } from "./components/ResizableWorkspace";
+import { Alert, Button, useComputedColorScheme } from "@mantine/core";
+import { IconPlayerPlay } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
+import { useMediaQuery } from "@mantine/hooks";
 import { LazyCodeEditor } from "./components/LazyCodeEditor";
 import type { EditorSessions } from "./components/CodeEditor";
-import { ResultPane, type ResultTab } from "./components/ResultPane";
-import { ImportSourceButton } from "./components/ImportSourceButton";
 import { FileSidebar } from "./components/FileSidebar";
 import { FileDialog, type FileDraft, type FileDialogSubmission } from "./components/FileDialog";
-import { Toolbar, type ToolbarNotice } from "./components/Toolbar";
-import { requestRun } from "./lib/runApi";
-import { deriveResultView } from "./lib/runView";
-import { buildShareUrl, readShareStateFromHash, type ShareState } from "./lib/share";
-import {
-  createFile,
-  downloadFile,
-  loadFiles,
-  persistFiles,
-  reorderFiles,
-  sameProgram,
-  uniqueName,
-  type FileCollection,
-  type ProgramFile,
-} from "./lib/files";
+import { Toolbar } from "./components/Toolbar";
+import { FileSettings } from "./components/FileSettings";
+import { PreviewBanner } from "./components/PreviewBanner";
+import { ProgramResult } from "./components/ProgramResult";
+import { ProgramLayout } from "./components/ProgramLayout";
+import { ConfirmDiscardDialog } from "./components/ConfirmDiscardDialog";
+import { useProgramWorkspace } from "./hooks/useProgramWorkspace";
+import { useProgramExecution } from "./hooks/useProgramExecution";
+import { useProgramShare } from "./hooks/useProgramShare";
+import { createFile, downloadFile, uniqueName, type ProgramFile } from "./lib/files";
 
-interface Execution {
-  result?: RunResult;
-  input?: ShareState;
-  error?: string;
-  tab: ResultTab;
-}
-function initialCollection() {
-  try {
-    return { collection: loadFiles(window.localStorage), error: null };
-  } catch {
-    return {
-      collection: { files: [], selectedId: null, sidebarOpen: true } satisfies FileCollection,
-      error:
-        "Saved files could not be read. Reload to try again. Existing browser data has not been replaced.",
-    };
-  }
-}
 export function App() {
-  const initial = useMemo(initialCollection, []);
-  const [collection, setCollection] = useState<FileCollection>(initial.collection);
-  const shared = useMemo(() => readShareStateFromHash(window.location.hash), []);
-  const [preview, setPreview] = useState<ProgramFile | null>(() =>
-    shared
-      ? {
-          ...shared,
-          id: crypto.randomUUID(),
-          name: shared.language === "c" ? "shared.c" : "shared.s",
-        }
-      : null,
-  );
-  const [previewSelected, setPreviewSelected] = useState(!!shared);
-  const [executions, setExecutions] = useState<Record<string, Execution>>({});
-  const [runningId, setRunningId] = useState<string | null>(null);
-  const inFlight = useRef<string | null>(null);
-  const sessions = useRef<EditorSessions>(new Map());
+  const workspace = useProgramWorkspace();
+  const { collection, preview, previewSelected, active, storageError, updateActive } = workspace;
+  const executionState = useProgramExecution();
+  const { executions, runningId } = executionState;
+  const sharing = useProgramShare();
+  const [sessions] = useState<EditorSessions>(() => new Map());
   const [mainTab, setMainTab] = useState<"code" | "result">("code");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [draft, setDraft] = useState<FileDraft | null>(null);
   const [deleting, setDeleting] = useState<ProgramFile | null>(null);
   const [closingPreview, setClosingPreview] = useState(false);
-  const [storageError, setStorageError] = useState<string | null>(initial.error);
   const [importError, setImportError] = useState<string | null>(null);
-  const [shareNotice, setShareNotice] = useState<ToolbarNotice | null>(null);
-  const {
-    copy,
-    copied,
-    error: clipboardError,
-    reset: resetClipboard,
-  } = useClipboard({ timeout: 2000 });
   const narrow = useMediaQuery("(max-width: 1080px)", undefined, {
     getInitialValueInEffect: false,
   });
   const colorScheme = useComputedColorScheme("light", { getInitialValueInEffect: false });
-  const active =
-    previewSelected && preview
-      ? preview
-      : collection.files.find((file) => file.id === collection.selectedId);
   const execution = active ? executions[active.id] : undefined;
   const ownRunning = !!active && runningId === active.id;
   const runningFile = [...collection.files, ...(preview ? [preview] : [])].find(
@@ -114,52 +41,22 @@ export function App() {
   );
 
   useEffect(() => {
-    if (initial.error) return;
-    let error: string | null = null;
-    try {
-      persistFiles(window.localStorage, collection);
-    } catch {
-      error = "Changes could not be saved in this browser. Download your files to keep a copy.";
-    }
-    let disposed = false;
-    queueMicrotask(() => {
-      if (!disposed) setStorageError(error);
-    });
-    return () => {
-      disposed = true;
-    };
-  }, [collection, initial.error]);
-
-  useEffect(() => {
     const live = new Set(collection.files.map((file) => file.id));
     if (preview) live.add(preview.id);
-    for (const id of sessions.current.keys()) if (!live.has(id)) sessions.current.delete(id);
-  }, [collection.files, preview]);
+    for (const id of sessions.keys()) if (!live.has(id)) sessions.delete(id);
+  }, [collection.files, preview, sessions]);
 
-  function updateActive(patch: Partial<Pick<ProgramFile, "code" | "target" | "compileOptions">>) {
-    if (!active) return;
-    if (previewSelected) setPreview((current) => (current ? { ...current, ...patch } : current));
-    else
-      setCollection((current) => ({
-        ...current,
-        files: current.files.map((file) => (file.id === active.id ? { ...file, ...patch } : file)),
-      }));
+  function showCode() {
+    setDrawerOpen(false);
+    setMainTab("code");
   }
   function select(id: string) {
-    setPreviewSelected(id === preview?.id);
-    if (id !== preview?.id) setCollection((current) => ({ ...current, selectedId: id }));
-    setDrawerOpen(false);
-    setMainTab("code");
+    workspace.select(id);
+    showCode();
   }
   function add(file: ProgramFile) {
-    setCollection((current) => ({
-      ...current,
-      files: [...current.files, file],
-      selectedId: file.id,
-    }));
-    setPreviewSelected(false);
-    setDrawerOpen(false);
-    setMainTab("code");
+    workspace.add(file);
+    showCode();
   }
   function newFile() {
     setDrawerOpen(false);
@@ -178,12 +75,7 @@ export function App() {
         );
         break;
       case "rename":
-        setCollection((current) => ({
-          ...current,
-          files: current.files.map((item) =>
-            item.id === draft.file.id ? { ...item, name: submission.name } : item,
-          ),
-        }));
+        workspace.renameFile(draft.file.id, submission.name);
         break;
       case "import":
         add({
@@ -194,81 +86,30 @@ export function App() {
         break;
       case "add":
         if (!preview || preview.id !== draft.file.id) return;
-        add({ ...preview, name: submission.name });
-        setPreview(null);
-        clearHash();
+        workspace.savePreview(submission.name);
+        showCode();
         break;
     }
     setDraft(null);
   }
-  function clearHash() {
-    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  function releaseFile(id: string) {
+    sessions.delete(id);
+    executionState.forget(id);
   }
   function closePreview() {
-    if (!preview || inFlight.current === preview.id) return;
-    sessions.current.delete(preview.id);
-    setExecutions((current) => {
-      const next = { ...current };
-      delete next[preview.id];
-      return next;
-    });
-    setPreview(null);
-    setPreviewSelected(false);
+    if (!preview || executionState.isRunning(preview.id)) return;
+    workspace.closePreview();
+    releaseFile(preview.id);
     setClosingPreview(false);
-    clearHash();
   }
-  async function run() {
-    if (!active || inFlight.current) return;
-    const file = active;
-    const input: ShareState = {
-      language: file.language,
-      target: file.target,
-      code: file.code,
-      compileOptions: file.compileOptions,
-    };
-    inFlight.current = file.id;
-    setRunningId(file.id);
-    setExecutions((current) => ({
-      ...current,
-      [file.id]: { ...current[file.id], error: undefined, tab: "output" },
-    }));
-    setMainTab("result");
-    try {
-      const outcome = await requestRun(input);
-      setExecutions((current) => ({
-        ...current,
-        [file.id]: outcome.ok
-          ? { result: outcome.result, input, tab: current[file.id]?.tab ?? "output" }
-          : { ...current[file.id], error: outcome.message, tab: current[file.id]?.tab ?? "output" },
-      }));
-    } catch {
-      setExecutions((current) => ({
-        ...current,
-        [file.id]: {
-          ...current[file.id],
-          error: "The Run could not be completed. Try again.",
-          tab: "output",
-        },
-      }));
-    } finally {
-      inFlight.current = null;
-      setRunningId(null);
-    }
+  function deleteFile() {
+    if (!deleting || executionState.isRunning(deleting.id)) return;
+    workspace.deleteFile(deleting.id);
+    releaseFile(deleting.id);
+    setDeleting(null);
   }
-  function share() {
-    if (!active) return;
-    resetClipboard();
-    setShareNotice(null);
-    const built = buildShareUrl(window.location.href, active);
-    if (!built.ok) {
-      setShareNotice({
-        tone: "error",
-        text: `Too long to share: ${built.length} of ${built.limit} characters. Shorten the code.`,
-      });
-      return;
-    }
-    window.history.replaceState(null, "", built.url);
-    copy(built.url);
+  function run() {
+    if (active && executionState.run(active)) setMainTab("result");
   }
   async function importSource(file: File) {
     setDrawerOpen(false);
@@ -298,19 +139,15 @@ export function App() {
       onSelect={select}
       onNew={newFile}
       onImport={(file) => void importSource(file)}
-      onReorder={(ids) =>
-        setCollection((current) => ({ ...current, files: reorderFiles(current.files, ids) }))
-      }
+      onReorder={workspace.reorder}
       onAction={(action, file) => {
         if (action === "rename") setDraft({ mode: "rename", file });
-        if (action === "duplicate")
-          add({
-            ...file,
-            id: crypto.randomUUID(),
-            name: uniqueName(`${file.name.slice(0, -2)}-copy`, file.language, collection.files),
-          });
+        if (action === "duplicate") {
+          workspace.duplicateFile(file.id);
+          showCode();
+        }
         if (action === "download") downloadFile(file);
-        if (action === "delete" && inFlight.current !== file.id) setDeleting(file);
+        if (action === "delete" && !executionState.isRunning(file.id)) setDeleting(file);
       }}
     />
   );
@@ -325,83 +162,30 @@ export function App() {
       {ownRunning ? "Running…" : "Run"}
     </Button>
   );
-  const view = deriveResultView(
-    execution?.result
-      ? { kind: "result", result: execution.result }
-      : ownRunning
-        ? { kind: "running" }
-        : execution?.error
-          ? { kind: "failed", message: execution.error }
-          : { kind: "idle" },
-    active?.language ?? "c",
-  );
-  const stale = !!active && !!execution?.input && !sameProgram(active, execution.input);
   const editor = active && (
     <>
       {previewSelected && (
-        <div className="preview-banner">
-          <div>
-            <strong>Shared preview</strong>
-            <span>Not saved in your files</span>
-          </div>
-          <Button
-            size="xs"
-            variant="default"
-            onClick={() =>
-              setDraft({
-                mode: "add",
-                file: {
-                  ...active,
-                  name: uniqueName(active.name, active.language, collection.files),
-                },
-              })
-            }
-          >
-            Add to files
-          </Button>
-          <CloseButton
-            variant="subtle"
-            iconSize={15}
-            aria-label="Close preview"
-            disabled={ownRunning}
-            onClick={() => {
-              if (shared && !sameProgram(active, shared)) setClosingPreview(true);
-              else closePreview();
-            }}
-          />
-        </div>
-      )}
-      <Group className="file-settings" gap={10} py={10} px={12}>
-        <Text size="xs" fw={600} truncate flex={1} miw={70} title={active.name}>
-          {active.name}
-        </Text>
-        {active.language === "c" ? (
-          <NativeSelect
-            size="xs"
-            aria-label="Target"
-            value={active.target}
-            data={TARGETS.map((item) => ({ value: item.id, label: item.displayName }))}
-            onChange={(event) => updateActive({ target: event.currentTarget.value as TargetId })}
-          />
-        ) : (
-          <Text size="xs" c="dimmed">
-            {getTargetDefinition(active.target).displayName}
-          </Text>
-        )}
-        <TextInput
-          className="file-settings__options"
-          size="xs"
-          aria-label="Compile options"
-          placeholder="-O2"
-          spellCheck={false}
-          autoComplete="off"
-          value={active.compileOptions}
-          onChange={(event) => updateActive({ compileOptions: event.currentTarget.value })}
+        <PreviewBanner
+          running={ownRunning}
+          onSave={() =>
+            setDraft({
+              mode: "add",
+              file: {
+                ...active,
+                name: uniqueName(active.name, active.language, collection.files),
+              },
+            })
+          }
+          onClose={() => {
+            if (workspace.previewEdited) setClosingPreview(true);
+            else closePreview();
+          }}
         />
-      </Group>
+      )}
+      <FileSettings file={active} onChange={updateActive} />
       <LazyCodeEditor
         fileId={active.id}
-        sessions={sessions.current}
+        sessions={sessions}
         value={active.code}
         language={active.language}
         target={active.target}
@@ -412,71 +196,25 @@ export function App() {
     </>
   );
   const result = active && (
-    <>
-      <div className="execution-heading">
-        <div className="execution-heading__context">
-          <strong title={active.name}>{active.name}</strong>
-          <span>{getTargetDefinition(active.target).displayName}</span>
-        </div>
-        {!narrow && runButton}
-      </div>
-      {runningId && (
-        <div className="execution-note" role="status">
-          {ownRunning
-            ? execution?.result
-              ? "Running… Showing output from the previous run."
-              : "Running…"
-            : `Running ${runningFile?.name ?? "another file"}…`}
-        </div>
-      )}
-      {execution?.input && (
-        <div className="execution-snapshot">
-          <span>
-            {stale ? "Out of date · " : ""}Last run:{" "}
-            {getTargetDefinition(execution.input.target).displayName}
-          </span>
-          <details>
-            <summary>Run settings</summary>
-            <div>
-              Compiler options: <code>{execution.input.compileOptions || "default"}</code>
-            </div>
-          </details>
-        </div>
-      )}
-      {execution?.error && execution.result && (
-        <Alert color="red" variant="light" p="xs">
-          {execution.error} Showing output from the previous run.
-        </Alert>
-      )}
-      <ResultPane
-        view={ownRunning ? { ...view, badge: "running" } : view}
-        tab={execution?.tab ?? "output"}
-        onTabChange={(tab) =>
-          setExecutions((current) => ({ ...current, [active.id]: { ...current[active.id], tab } }))
-        }
-        language={active.language}
-        target={execution?.input?.target ?? active.target}
-        colorScheme={colorScheme}
-      />
-    </>
+    <ProgramResult
+      file={active}
+      execution={execution}
+      runningId={runningId}
+      runningFile={runningFile}
+      colorScheme={colorScheme}
+      runButton={!narrow && runButton}
+      onTabChange={(tab) => executionState.selectTab(active.id, tab)}
+    />
   );
   return (
     <div className="app">
       <Toolbar
-        onShare={share}
-        disabled={!active}
-        notice={
-          shareNotice ??
-          (clipboardError
-            ? { tone: "error", text: "Could not copy the link. Copy the URL from the address bar." }
-            : copied
-              ? { tone: "info", text: "Share URL copied to clipboard." }
-              : null)
-        }
-        onDismiss={() => {
-          setShareNotice(null);
-          resetClipboard();
+        onShare={() => {
+          if (active) sharing.share(active);
         }}
+        disabled={!active}
+        notice={sharing.notice}
+        onDismiss={sharing.dismiss}
       />
       {storageError && (
         <Alert color="red" p="xs">
@@ -488,88 +226,27 @@ export function App() {
           {importError}
         </Alert>
       )}
-      <div className="workbench">
-        {!narrow && collection.sidebarOpen && <aside className="sidebar">{sidebar}</aside>}
-        <div className="workbench__main">
-          <Group className="workbench__navigation" gap={8} py={5} px={12} wrap="nowrap">
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              aria-label={narrow || !collection.sidebarOpen ? "Show files" : "Hide files"}
-              onClick={() => {
-                if (narrow) setDrawerOpen(true);
-                else
-                  setCollection((current) => ({ ...current, sidebarOpen: !current.sidebarOpen }));
-              }}
-            >
-              {!narrow && collection.sidebarOpen ? (
-                <IconLayoutSidebarLeftCollapse size={18} />
-              ) : (
-                <IconLayoutSidebarLeftExpand size={18} />
-              )}
-            </ActionIcon>
-            <Text size="xs" c="dimmed">
-              {previewSelected ? "Shared preview" : "Independent programs"}
-            </Text>
-          </Group>
-          {!active ? (
-            <Center component="main" flex={1} p={24}>
-              <EmptyState
-                size="sm"
-                title="Start with a program"
-                description="Create a C or assembly file to begin."
-              >
-                <EmptyState.Actions>
-                  <Button size="xs" onClick={newFile}>
-                    New file
-                  </Button>
-                  <ImportSourceButton inEmptyState onImport={(file) => void importSource(file)} />
-                </EmptyState.Actions>
-              </EmptyState>
-            </Center>
-          ) : narrow ? (
-            <Tabs
-              className="workspace workspace--stacked"
-              value={mainTab}
-              onChange={(value) => {
-                if (value) setMainTab(value as "code" | "result");
-              }}
-              keepMounted
-              keepMountedMode="display-none"
-            >
-              <div className="mobile-run-bar">
-                <Tabs.List aria-label="Workspace">
-                  <Tabs.Tab value="code">Code</Tabs.Tab>
-                  <Tabs.Tab value="result">Result</Tabs.Tab>
-                </Tabs.List>
-                {runningId && !ownRunning && (
-                  <span className="mobile-run-bar__status" role="status">
-                    Running {runningFile?.name ?? "another file"}…
-                  </span>
-                )}
-                {runButton}
-              </div>
-              <Tabs.Panel className="workspace__panel" value="code">
-                {editor}
-              </Tabs.Panel>
-              <Tabs.Panel className="workspace__panel" value="result">
-                {result}
-              </Tabs.Panel>
-            </Tabs>
-          ) : (
-            <ResizableWorkspace code={editor} result={result} />
-          )}
-        </div>
-      </div>
-      <Drawer
-        opened={!!narrow && drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        title="Your programs"
-        size={280}
-        styles={{ body: { height: "calc(100% - 64px)", padding: 0 } }}
-      >
-        {sidebar}
-      </Drawer>
+      <ProgramLayout
+        narrow={!!narrow}
+        sidebarOpen={collection.sidebarOpen}
+        drawerOpen={drawerOpen}
+        previewSelected={previewSelected}
+        hasActive={!!active}
+        mainTab={mainTab}
+        otherRunningName={runningId && !ownRunning ? (runningFile?.name ?? "another file") : null}
+        sidebar={sidebar}
+        editor={editor}
+        result={result}
+        runButton={runButton}
+        onToggleSidebar={() => {
+          if (narrow) setDrawerOpen(true);
+          else workspace.toggleSidebar();
+        }}
+        onCloseDrawer={() => setDrawerOpen(false)}
+        onTabChange={setMainTab}
+        onNew={newFile}
+        onImport={(file) => void importSource(file)}
+      />
       {draft && (
         <FileDialog
           key={draft.file.id + draft.mode}
@@ -579,68 +256,28 @@ export function App() {
           onSubmit={submitDraft}
         />
       )}
-      <Modal
+      <ConfirmDiscardDialog
         opened={!!deleting}
-        onClose={() => setDeleting(null)}
         title="Delete file"
-        centered
-        size="sm"
+        cancelLabel="Cancel"
+        confirmLabel="Delete"
+        disabled={deleting?.id === runningId}
+        onClose={() => setDeleting(null)}
+        onConfirm={deleteFile}
       >
-        <Text size="sm">Delete “{deleting?.name}”? This cannot be undone.</Text>
-        <Group justify="flex-end" mt="md">
-          <Button variant="default" onClick={() => setDeleting(null)}>
-            Cancel
-          </Button>
-          <Button
-            color="red"
-            disabled={deleting?.id === runningId}
-            onClick={() => {
-              if (!deleting || inFlight.current === deleting.id) return;
-              const id = deleting.id;
-              setCollection((current) => {
-                const index = current.files.findIndex((file) => file.id === id);
-                const files = current.files.filter((file) => file.id !== id);
-                return {
-                  ...current,
-                  files,
-                  selectedId:
-                    current.selectedId === id
-                      ? (files[Math.min(index, files.length - 1)]?.id ?? null)
-                      : current.selectedId,
-                };
-              });
-              sessions.current.delete(id);
-              setExecutions((current) => {
-                const next = { ...current };
-                delete next[id];
-                return next;
-              });
-              setDeleting(null);
-            }}
-          >
-            Delete
-          </Button>
-        </Group>
-      </Modal>
-      <Modal
+        Delete “{deleting?.name}”? This cannot be undone.
+      </ConfirmDiscardDialog>
+      <ConfirmDiscardDialog
         opened={closingPreview}
-        onClose={() => setClosingPreview(false)}
         title="Close shared preview"
-        centered
-        size="sm"
+        cancelLabel="Keep editing"
+        confirmLabel="Discard preview"
+        disabled={preview?.id === runningId}
+        onClose={() => setClosingPreview(false)}
+        onConfirm={closePreview}
       >
-        <Text size="sm">
-          Discard changes to “{preview?.name}”? Add it to your files to keep your edits.
-        </Text>
-        <Group justify="flex-end" mt="md">
-          <Button variant="default" onClick={() => setClosingPreview(false)}>
-            Keep editing
-          </Button>
-          <Button color="red" disabled={preview?.id === runningId} onClick={closePreview}>
-            Discard preview
-          </Button>
-        </Group>
-      </Modal>
+        Discard changes to “{preview?.name}”? Add it to your files to keep your edits.
+      </ConfirmDiscardDialog>
     </div>
   );
 }
