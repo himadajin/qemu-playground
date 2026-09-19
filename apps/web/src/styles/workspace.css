@@ -23,54 +23,39 @@ body {
   min-height: 0;
   display: flex;
 }
+.workspace__splitter {
+  flex: 1;
+  min-width: 0;
+}
 .workspace__pane {
-  flex: 1 1 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
-.workspace__pane--code {
-  flex-grow: 0;
-  flex-shrink: 0;
-}
 .workspace__divider {
-  position: relative;
-  flex: 0 0 12px;
-  cursor: col-resize;
-  touch-action: none;
-  background: var(--mantine-color-body);
+  z-index: 1;
 }
+/* Keep a 12px hit area without subtracting space from the splitter's pane sizes. */
 .workspace__divider::before {
   content: "";
   position: absolute;
-  inset: 0;
-  width: 1px;
-  margin: auto;
-  background: var(--mantine-color-default-border);
+  inset-block: 0;
+  width: 12px;
+  background: linear-gradient(
+    to right,
+    transparent calc(50% - 0.5px),
+    var(--mantine-color-default-border) calc(50% - 0.5px),
+    var(--mantine-color-default-border) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
 }
-.workspace__divider::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  width: 4px;
-  height: 32px;
-  margin: auto;
-  border-radius: var(--mantine-radius-sm);
-  background: var(--mantine-color-dimmed);
+.workspace__divider:hover::before,
+.workspace__divider[data-active]::before {
+  --mantine-color-default-border: var(--mantine-primary-color-filled);
 }
-.workspace__divider:hover::after,
-.workspace__divider:focus-visible::after,
-.workspace--resizing .workspace__divider::after {
-  background: var(--mantine-primary-color-filled);
-}
-.workspace__divider:focus-visible {
+.workspace__divider:focus-visible::before {
   outline: 2px solid var(--mantine-primary-color-filled);
   outline-offset: -2px;
-}
-.workspace--resizing,
-.workspace--resizing * {
-  cursor: col-resize !important;
-  user-select: none;
 }
 .workspace--stacked {
   flex-direction: column;

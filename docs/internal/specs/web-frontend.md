@@ -9,7 +9,8 @@ A single-screen playground for entering code, running it, and inspecting results
   independently rather than extending the entire page.
 - Desktop panes start at 50:50, with a minimum width of 320px each. Drag the central divider
   using a mouse or touch, or focus it with Tab and use Left/Right arrows to adjust by 16px.
-  The divider has a visible grip and a 12px interaction area. Neither pane can collapse.
+  The divider is a thin line without a grip, with a 12px interaction area and a visible keyboard
+  focus indicator. Neither pane can collapse.
 - The preferred split ratio is stored in LocalStorage under `qemu-playground:workspace-ratio:v1`.
   Reloading restores it; viewport changes constrain the displayed split to the minimum widths
   without replacing the preference. Invalid or unavailable storage falls back to equal widths.
@@ -71,8 +72,8 @@ The labels are `success`, `compile error`, `runtime error`, `timeout`, `running`
   Light mode is fixed; there is no dark-mode control.
 - The centralized theme retains Geist for UI text, Noto Sans JP as its Japanese fallback, and
   Geist Mono for code and logs. Controls use compact standard sizes; code and logs use 13px text.
-- Mantine SegmentedControl, Select, TextInput, Button, Tabs, Modal, Badge, and Skeleton provide the
-  common controls. Custom CSS handles playground layout, pane sizing, scrolling, log formatting,
+- Mantine SegmentedControl, Select, TextInput, Button, Tabs, Modal, Badge, Skeleton, and Splitter provide the
+  common controls. Custom CSS handles playground layout, divider appearance, scrolling, log formatting,
   and editor positioning.
 - Monaco widgets are contained in the app's stacking context so that dropdowns and modal portals
   render above them.
