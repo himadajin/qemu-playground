@@ -1,9 +1,0 @@
-.snippet-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.snippet-list__open {
-  flex: 1;
-  min-width: 0;
-}

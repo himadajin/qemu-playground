@@ -21,39 +21,53 @@ body {
   min-height: 0;
   display: flex;
 }
-.workspace__splitter {
+.program-layout {
+  display: flex;
   flex: 1;
   min-width: 0;
+  min-height: 0;
 }
-.workspace__pane {
+.program-layout__pane {
+  flex-shrink: 0;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
-.workspace__divider {
+.resizable-split__divider {
+  position: relative;
+  flex: 0 0 0;
+  cursor: col-resize;
+  touch-action: none;
   z-index: 1;
 }
 /* Keep a 12px hit area without subtracting space from the splitter's pane sizes. */
-.workspace__divider::before {
+.resizable-split__divider::before {
   content: "";
   position: absolute;
   inset-block: 0;
+  left: -6px;
   width: 12px;
   background: linear-gradient(
     to right,
     transparent calc(50% - 0.5px),
-    var(--mantine-color-default-border) calc(50% - 0.5px),
-    var(--mantine-color-default-border) calc(50% + 0.5px),
+    var(--resizable-split-divider-color, var(--mantine-color-default-border)) calc(50% - 0.5px),
+    var(--resizable-split-divider-color, var(--mantine-color-default-border)) calc(50% + 0.5px),
     transparent calc(50% + 0.5px)
   );
 }
-.workspace__divider:hover::before,
-.workspace__divider[data-active]::before {
-  --mantine-color-default-border: var(--mantine-primary-color-filled);
+.resizable-split__divider:hover,
+.resizable-split__divider[data-active] {
+  --resizable-split-divider-color: var(--mantine-primary-color-filled);
 }
-.workspace__divider:focus-visible::before {
+.resizable-split__divider:focus-visible::before {
   outline: 2px solid var(--mantine-primary-color-filled);
   outline-offset: -2px;
+}
+.program-layout__editor {
+  flex: 1;
+  min-width: 0;
 }
 .workspace--stacked {
   flex-direction: column;
