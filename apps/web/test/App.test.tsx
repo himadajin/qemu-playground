@@ -602,6 +602,35 @@ describe("playground interactions", () => {
     });
   });
 
+  it.each([false, true])(
+    "can import the same file again after canceling (narrow: %s)",
+    async (narrow) => {
+      if (narrow) {
+        matchMediaMock.mockImplementation((query) => ({
+          ...createMediaQueryList(query),
+          matches: query === "(max-width: 1080px)",
+        }));
+      }
+      const user = userEvent.setup();
+      mount();
+      const file = new File(["int main(void) { return 0; }"], "example.c", { type: "text/plain" });
+      Object.defineProperty(file, "text", {
+        value: () => Promise.resolve("int main(void) { return 0; }"),
+      });
+      if (narrow) await user.click(screen.getByRole("button", { name: "Show files" }));
+      await user.upload(screen.getByLabelText("Import source file"), file);
+      const firstDialog = await screen.findByRole("dialog", { name: "Import source" });
+      expect(screen.queryByRole("dialog", { name: "Your programs" })).not.toBeInTheDocument();
+      await user.click(within(firstDialog).getByRole("button", { name: "Cancel" }));
+      if (narrow) await user.click(screen.getByRole("button", { name: "Show files" }));
+      await user.upload(screen.getByLabelText("Import source file"), file);
+      const secondDialog = await screen.findByRole("dialog", { name: "Import source" });
+      await user.click(within(secondDialog).getByRole("button", { name: "Import source" }));
+      expect(source()).toHaveValue("int main(void) { return 0; }");
+      expect(loadFiles(localStorage).files.at(-1)?.name).toBe("example.c");
+    },
+  );
+
   it("confirms copying in the button and resets feedback two seconds after the latest copy", async () => {
     userEvent.setup();
     const copy = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();

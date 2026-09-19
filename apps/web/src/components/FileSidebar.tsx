@@ -1,7 +1,17 @@
-import { ActionIcon, Button, Menu, Text, VisuallyHidden } from "@mantine/core";
-import { IconDots, IconGripVertical, IconPlus, IconUpload } from "@tabler/icons-react";
+import {
+  ActionIcon,
+  Button,
+  Group,
+  Menu,
+  NavLink,
+  Stack,
+  Text,
+  VisuallyHidden,
+} from "@mantine/core";
+import { IconDots, IconGripVertical, IconPlus } from "@tabler/icons-react";
 import { getTargetDefinition } from "@qemu-playground/shared";
 import { useRef, useState } from "react";
+import { ImportSourceButton } from "./ImportSourceButton";
 import type { ProgramFile } from "../lib/files";
 
 type FileAction = "rename" | "duplicate" | "download" | "delete";
@@ -12,7 +22,7 @@ interface Props {
   preview: ProgramFile | null;
   onSelect: (id: string) => void;
   onNew: () => void;
-  onImport: () => void;
+  onImport: (file: File) => void;
   onAction: (action: FileAction, file: ProgramFile) => void;
   onReorder: (files: ProgramFile[]) => void;
 }
@@ -49,16 +59,23 @@ export function FileSidebar(props: Props) {
     announce(cancel ? "Reordering canceled." : "File order updated.");
   }
   return (
-    <nav className={`files${reorderMode ? " files--reordering" : ""}`} aria-label="Files">
-      <div className="files__heading">
+    <Stack
+      component="nav"
+      gap={0}
+      h="100%"
+      mih={0}
+      className={reorderMode ? "files--reordering" : undefined}
+      aria-label="Files"
+    >
+      <Group justify="space-between" wrap="nowrap" pt={14} px={16} pb={8}>
         <Text size="xs" fw={600}>
           Files
         </Text>
         <Text size="xs" c="dimmed">
           {props.files.length}
         </Text>
-      </div>
-      <div className="files__tools">
+      </Group>
+      <Group gap={4} wrap="nowrap" px={12} pb={12}>
         <Button
           size="xs"
           variant="default"
@@ -67,28 +84,26 @@ export function FileSidebar(props: Props) {
         >
           New
         </Button>
-        <Button
-          size="xs"
-          variant="subtle"
-          color="gray"
-          leftSection={<IconUpload size={14} />}
-          onClick={props.onImport}
-        >
-          Import
-        </Button>
-      </div>
+        <ImportSourceButton onImport={props.onImport} />
+      </Group>
       {props.preview && (
         <div className="files__preview">
-          <button
+          <NavLink
+            component="button"
             className="file__select"
+            active={props.selectedId === props.preview.id}
+            aria-label="Shared preview"
             aria-current={props.selectedId === props.preview.id ? "page" : undefined}
             onClick={() => props.onSelect(props.preview!.id)}
-          >
-            Shared preview
-          </button>
-          <Text size="xs" c="dimmed">
-            Not saved
-          </Text>
+            label={
+              <Text component="span" size="xs">
+                Shared preview
+              </Text>
+            }
+            description="Not saved"
+            color="gray"
+            variant="subtle"
+          />
         </div>
       )}
       <div className="files__list">
@@ -141,20 +156,41 @@ export function FileSidebar(props: Props) {
             >
               <IconGripVertical size={13} />
             </ActionIcon>
-            <button
+            <NavLink
+              component="button"
               className="file__select"
+              active={props.selectedId === file.id}
               aria-current={props.selectedId === file.id ? "page" : undefined}
               onClick={() => props.onSelect(file.id)}
               title={file.name}
-            >
-              <span className="file__name">{file.name}</span>
-              {file.language === "asm" && (
-                <span className="file__arch">{getTargetDefinition(file.target).displayName}</span>
-              )}
-              {props.runningId === file.id && (
-                <span className="file__running" aria-label="Running" />
-              )}
-            </button>
+              color="gray"
+              variant="subtle"
+              noWrap
+              label={
+                <Text
+                  component="span"
+                  size="xs"
+                  fw={props.selectedId === file.id ? 600 : undefined}
+                  truncate
+                >
+                  {file.name}
+                </Text>
+              }
+              rightSection={
+                file.language === "asm" || props.runningId === file.id ? (
+                  <Group component="span" gap={6} wrap="nowrap">
+                    {file.language === "asm" && (
+                      <Text component="span" size="10px" c="dimmed">
+                        {getTargetDefinition(file.target).displayName}
+                      </Text>
+                    )}
+                    {props.runningId === file.id && (
+                      <span className="file__running" aria-label="Running" />
+                    )}
+                  </Group>
+                ) : undefined
+              }
+            />
             <Menu position="bottom-end" withinPortal>
               <Menu.Target>
                 <ActionIcon
@@ -191,7 +227,7 @@ export function FileSidebar(props: Props) {
         )}
       </div>
       {reorderMode && (
-        <div className="files__reorder">
+        <Group p={12} gap={8} justify="space-between" wrap="nowrap">
           <Text size="xs" c="dimmed">
             Drag a handle to reorder.
           </Text>
@@ -205,10 +241,12 @@ export function FileSidebar(props: Props) {
           >
             Done
           </Button>
-        </div>
+        </Group>
       )}
-      <div className="files__footer">Saved in this browser</div>
+      <Text py={12} px={16} size="11px" c="dimmed">
+        Saved in this browser
+      </Text>
       <VisuallyHidden role="status">{announcement}</VisuallyHidden>
-    </nav>
+    </Stack>
   );
 }

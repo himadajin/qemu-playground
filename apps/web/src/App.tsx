@@ -8,6 +8,9 @@ import {
   ActionIcon,
   Alert,
   Button,
+  Center,
+  CloseButton,
+  EmptyState,
   Drawer,
   Group,
   Modal,
@@ -21,7 +24,6 @@ import {
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
   IconPlayerPlay,
-  IconX,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useClipboard, useMediaQuery } from "@mantine/hooks";
@@ -29,6 +31,7 @@ import { ResizableWorkspace } from "./components/ResizableWorkspace";
 import { LazyCodeEditor } from "./components/LazyCodeEditor";
 import type { EditorSessions } from "./components/CodeEditor";
 import { ResultPane, type ResultTab } from "./components/ResultPane";
+import { ImportSourceButton } from "./components/ImportSourceButton";
 import { FileSidebar } from "./components/FileSidebar";
 import { FileDialog, type FileDraft } from "./components/FileDialog";
 import { Toolbar, type ToolbarNotice } from "./components/Toolbar";
@@ -90,7 +93,6 @@ export function App() {
   const [storageError, setStorageError] = useState<string | null>(initial.error);
   const [importError, setImportError] = useState<string | null>(null);
   const [shareNotice, setShareNotice] = useState<ToolbarNotice | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
   const {
     copy,
     copied,
@@ -252,6 +254,25 @@ export function App() {
     window.history.replaceState(null, "", built.url);
     copy(built.url);
   }
+  async function importSource(file: File) {
+    setDrawerOpen(false);
+    if (!/\.(c|s)$/i.test(file.name)) {
+      setImportError("Choose a .c or .s source file.");
+      return;
+    }
+    try {
+      const language = /\.c$/i.test(file.name) ? "c" : "asm";
+      const imported = {
+        ...createFile(language),
+        code: await file.text(),
+        name: uniqueName(file.name, language, collection.files),
+      };
+      setDraft({ mode: "import", file: imported });
+      setImportError(null);
+    } catch {
+      setImportError("This file could not be read. Try importing it again.");
+    }
+  }
   const sidebar = (
     <FileSidebar
       files={collection.files}
@@ -260,10 +281,7 @@ export function App() {
       preview={preview}
       onSelect={select}
       onNew={newFile}
-      onImport={() => {
-        setDrawerOpen(false);
-        fileInput.current?.click();
-      }}
+      onImport={(file) => void importSource(file)}
       onReorder={(files) => setCollection((current) => ({ ...current, files }))}
       onAction={(action, file) => {
         if (action === "rename") setDraft({ mode: "rename", file });
@@ -323,24 +341,22 @@ export function App() {
           >
             Add to files
           </Button>
-          <ActionIcon
+          <CloseButton
             variant="subtle"
-            color="gray"
+            iconSize={15}
             aria-label="Close preview"
             disabled={ownRunning}
             onClick={() => {
               if (shared && !sameProgram(active, shared)) setClosingPreview(true);
               else closePreview();
             }}
-          >
-            <IconX size={15} />
-          </ActionIcon>
+          />
         </div>
       )}
-      <div className="file-settings">
-        <span className="file-settings__name" title={active.name}>
+      <Group className="file-settings" gap={10} py={10} px={12}>
+        <Text size="xs" fw={600} truncate flex={1} miw={70} title={active.name}>
           {active.name}
-        </span>
+        </Text>
         {active.language === "c" ? (
           <NativeSelect
             size="xs"
@@ -364,7 +380,7 @@ export function App() {
           value={active.compileOptions}
           onChange={(event) => updateActive({ compileOptions: event.currentTarget.value })}
         />
-      </div>
+      </Group>
       <LazyCodeEditor
         fileId={active.id}
         sessions={sessions.current}
@@ -457,7 +473,7 @@ export function App() {
       <div className="workbench">
         {!narrow && collection.sidebarOpen && <aside className="sidebar">{sidebar}</aside>}
         <div className="workbench__main">
-          <div className="workbench__navigation">
+          <Group className="workbench__navigation" gap={8} py={5} px={12} wrap="nowrap">
             <ActionIcon
               variant="subtle"
               color="gray"
@@ -477,22 +493,22 @@ export function App() {
             <Text size="xs" c="dimmed">
               {previewSelected ? "Shared preview" : "Independent programs"}
             </Text>
-          </div>
+          </Group>
           {!active ? (
-            <main className="empty-workspace">
-              <Text fw={500}>Start with a program</Text>
-              <Text size="sm" c="dimmed">
-                Create a C or assembly file to begin.
-              </Text>
-              <Group gap="xs">
-                <Button size="xs" onClick={newFile}>
-                  New file
-                </Button>
-                <Button size="xs" variant="default" onClick={() => fileInput.current?.click()}>
-                  Import source
-                </Button>
-              </Group>
-            </main>
+            <Center component="main" flex={1} p={24}>
+              <EmptyState
+                size="sm"
+                title="Start with a program"
+                description="Create a C or assembly file to begin."
+              >
+                <EmptyState.Actions>
+                  <Button size="xs" onClick={newFile}>
+                    New file
+                  </Button>
+                  <ImportSourceButton inEmptyState onImport={(file) => void importSource(file)} />
+                </EmptyState.Actions>
+              </EmptyState>
+            </Center>
           ) : narrow ? (
             <Tabs
               className="workspace workspace--stacked"
@@ -536,36 +552,6 @@ export function App() {
       >
         {sidebar}
       </Drawer>
-      <input
-        ref={fileInput}
-        type="file"
-        accept=".c,.s"
-        hidden
-        aria-label="Import source file"
-        onChange={(event) => {
-          const file = event.currentTarget.files?.[0];
-          event.currentTarget.value = "";
-          if (!file) return;
-          if (!/\.(c|s)$/i.test(file.name)) {
-            setImportError("Choose a .c or .s source file.");
-            return;
-          }
-          void (async () => {
-            try {
-              const language = /\.c$/i.test(file.name) ? "c" : "asm";
-              const imported = {
-                ...createFile(language),
-                code: await file.text(),
-                name: uniqueName(file.name, language, collection.files),
-              };
-              setDraft({ mode: "import", file: imported });
-              setImportError(null);
-            } catch {
-              setImportError("This file could not be read. Try importing it again.");
-            }
-          })();
-        }}
-      />
       {draft && (
         <FileDialog
           key={draft.file.id + draft.mode}
