@@ -110,7 +110,7 @@ export function ProgramLayout({
             </ActionIcon>
             <Tabs.List aria-label="Workspace">
               <Tabs.Tab value="code">Code</Tabs.Tab>
-              <Tabs.Tab value="result">Result</Tabs.Tab>
+              <Tabs.Tab value="result">Console</Tabs.Tab>
             </Tabs.List>
             {otherRunningName && (
               <span className="mobile-run-bar__status" role="status">

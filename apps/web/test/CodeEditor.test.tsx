@@ -200,6 +200,15 @@ describe("CodeEditor integration", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it("opens Find from the viewer toolbar without allowing replacement", () => {
+    const { rerender } = render(<CodeEditor {...defaults} readOnly searchRequest={0} />);
+    expect(screen.queryByRole("textbox", { name: "Find" })).toBeNull();
+    rerender(<CodeEditor {...defaults} readOnly searchRequest={1} />);
+    expect(screen.getByRole("textbox", { name: "Find" })).toBeVisible();
+    expect(screen.queryByRole("textbox", { name: "Replace" })).toBeNull();
+    expect(currentView().state.doc.toString()).toBe(defaults.value);
+  });
+
   it("disposes the real view on unmount, including under StrictMode", () => {
     const { unmount } = render(
       <StrictMode>

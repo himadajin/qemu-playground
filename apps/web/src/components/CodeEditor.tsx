@@ -1,7 +1,7 @@
 import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
 import { indentWithTab } from "@codemirror/commands";
 import { bracketMatching, indentOnInput, indentUnit } from "@codemirror/language";
-import { search, searchKeymap } from "@codemirror/search";
+import { openSearchPanel, search, searchKeymap } from "@codemirror/search";
 import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
 import type { Language, TargetId } from "@qemu-playground/shared";
@@ -26,6 +26,7 @@ export interface CodeEditorProps {
   readOnly?: boolean;
   ariaLabel: string;
   onChange?: (value: string) => void;
+  searchRequest?: number;
 }
 
 function interaction({ readOnly = false, ariaLabel }: CodeEditorProps) {
@@ -178,6 +179,10 @@ export function CodeEditor(props: CodeEditorProps) {
     }
     editor.props = props;
   }, [props]);
+
+  useLayoutEffect(() => {
+    if (props.searchRequest) openSearchPanel(editorRef.current!.view);
+  }, [props.searchRequest]);
 
   return <div className="editor-shell__surface" ref={containerRef} />;
 }

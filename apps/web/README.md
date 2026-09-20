@@ -35,7 +35,7 @@ sidebar uses 44px for icons or starts at 240px when expanded. Drag its divider t
 any width from 160px to 420px; resizing is immediate, action labels respect reduced-motion
 preferences, and the width is saved under `qemu-playground:sidebar-width:v1`. Sidebar toggles
 stay icon-only in both states, with their action names available through hover/focus tooltips.
-At 1080px or below, a button beside Code / Result / Run
+At 1080px or below, a button beside Code / Console / Run
 opens a fixed 280px overlay drawer with the same vertical layout. Files have unique names,
 fixed language and assembly architecture, and per-file compiler options and C target.
 Creation, rename, duplication, deletion, source import/download, and accessible manual
@@ -61,10 +61,18 @@ When the new key is absent, `lib/storage.ts` reads legacy
 preserve all valid programs despite filename collisions. The old key stays intact.
 Unreadable collection data is not overwritten. No account or server storage is used.
 
-Results and editor history are session-only. Each run captures its source file ID
-and input snapshot. Only one request is allowed at a time; switching files cannot
-redirect late results. Editing marks differing results as out of date. Re-running
-retains previous output while waiting; request failures retain it with an error.
+Console and editor history are session-only. Each file retains its latest 20 runs,
+with immutable source, settings, filename, and start time. Submission appends a record;
+completion or request failure updates only that record. Only one request is allowed
+at a time; switching files cannot redirect late results. Editing marks only the latest
+run when its inputs differ. Folding and Console position survive file switches.
+
+Build diagnostics, stdout, stderr, and outcomes appear together, omitting empty streams.
+Details and generated assembly open in read-only modals with copying and search. Clear
+confirms removal of the displayed file's history and is disabled during any request;
+Copy log excludes source and assembly. Jump to latest preserves folding. See the
+[behavior specification](../../docs/internal/specs/web-frontend.md) for retention,
+scroll anchoring, outcome states, and viewer behavior.
 
 ## Sharing
 
@@ -106,8 +114,8 @@ layout changes. Cached states reconfigure their theme, language, and change list
 when restored. Deleted files and closed previews release their cache entries.
 A different external value for the same editor identity resets editing state.
 Generated assembly uses the target captured when its Run was submitted and is
-read-only, focusable, selectable, copyable, and searchable. Closing its result tab
-unmounts the view and discards its editing state.
+read-only, focusable, selectable, copyable, and searchable. Closing its modal
+unmounts the view; reopening starts with fresh selection, search, and scroll state.
 
 See [Using the playground](../../docs/user/usage.md) for keyboard controls,
 including **Escape, then Tab** to leave the editor.

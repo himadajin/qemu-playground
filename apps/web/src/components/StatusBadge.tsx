@@ -3,6 +3,7 @@ import { STATUS_BADGE_LABEL, type StatusBadgeKind } from "../lib/runView";
 
 const BADGE_COLOR: Record<StatusBadgeKind, string> = {
   success: "green",
+  nonzero: "red",
   running: "blue",
   compile_error: "red",
   runtime_error: "red",

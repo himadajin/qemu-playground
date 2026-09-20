@@ -17,15 +17,16 @@ export type RunPhase =
   | { kind: "failed"; message: string };
 
 export type StatusBadgeKind =
-  "success" | "compile_error" | "runtime_error" | "timeout" | "running" | "error";
+  "success" | "nonzero" | "compile_error" | "runtime_error" | "timeout" | "running" | "error";
 
 export const STATUS_BADGE_LABEL: Record<StatusBadgeKind, string> = {
-  success: "success",
+  success: "exit 0",
+  nonzero: "nonzero exit",
   compile_error: "compile error",
   runtime_error: "runtime error",
   timeout: "timeout",
   running: "running",
-  error: "error",
+  error: "request failed",
 };
 
 export interface OutputView {
@@ -88,7 +89,13 @@ function assemblyFromResult(result: RunResult, language: Language): AssemblyView
     return {
       kind: "empty",
       message:
-        "No assembly for this Run: the build did not reach a runnable binary. See the Build tab.",
+        "No assembly for this Run: the build did not reach a runnable binary. See the build diagnostics below.",
+    };
+  }
+  if (assembly.code === "") {
+    return {
+      kind: "empty",
+      message: "Assembly extraction failed. See the build diagnostics above.",
     };
   }
   return { kind: "code", code: assembly.code, truncated: assembly.truncated };
@@ -150,7 +157,7 @@ export function deriveResultView(phase: RunPhase, language: Language): ResultVie
   switch (result.status) {
     case "success":
       return {
-        badge: "success",
+        badge: result.exitCode === 0 ? "success" : "nonzero",
         output: {
           state: "Program finished.",
           exit: `exit code ${result.exitCode}`,
@@ -167,9 +174,7 @@ export function deriveResultView(phase: RunPhase, language: Language): ResultVie
     case "compile_error":
       return {
         badge: "compile_error",
-        output: emptyOutput("The build failed; the program was not run.", [
-          "See the Build tab for the compiler output.",
-        ]),
+        output: emptyOutput("The build failed; the program was not run."),
         build,
         assembly,
       };

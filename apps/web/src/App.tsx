@@ -195,13 +195,16 @@ export function App() {
   );
   const result = active && (
     <ProgramResult
+      key={active.id}
       file={active}
       execution={execution}
       runningId={runningId}
       runningFile={runningFile}
       colorScheme={colorScheme}
       runButton={!narrow && runButton}
-      onTabChange={(tab) => executionState.selectTab(active.id, tab)}
+      scrollPositions={executionState.scrollPositions}
+      onToggle={(runId) => executionState.toggle(active.id, runId)}
+      onClear={() => executionState.clear(active.id)}
     />
   );
   return (
