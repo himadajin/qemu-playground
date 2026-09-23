@@ -29,9 +29,12 @@ describe("result view mapping", () => {
     expect(view.build.log).toBe("");
   });
 
-  it("treats a non-zero exit code as success", () => {
+  it("distinguishes a nonzero normal exit from exit zero", () => {
     const view = deriveResultView({ kind: "result", result: SUCCESS }, "c");
-    expect(view.badge).toBe("success");
+    expect(view.badge).toBe("nonzero");
+    expect(
+      deriveResultView({ kind: "result", result: { ...SUCCESS, exitCode: 0 } }, "c").badge,
+    ).toBe("success");
     expect(view.output.exit).toContain("42");
     expect(view.output.stdout).toBe("hello\n");
   });

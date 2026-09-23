@@ -253,14 +253,14 @@ describe("playground interactions", () => {
     expect(await screen.findByText("hello result")).toBeVisible();
     expect(screen.getByText("stderr result")).toBeVisible();
     expect(screen.getByText("exit code 42")).toBeVisible();
-    expect(screen.getByText("truncated")).toBeVisible();
+    expect(screen.getAllByText("truncated")).toHaveLength(2);
     expect(screen.queryByRole("textbox", { name: "Generated assembly" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("tab", { name: "Build" }));
     expect(screen.getByText("compiler warning")).toBeVisible();
-    expect(screen.getByText("truncated")).toBeVisible();
-    await user.click(screen.getByRole("tab", { name: "Assembly" }));
+    expect(screen.getAllByText("truncated")).toHaveLength(2);
+    await user.click(screen.getByRole("button", { name: "View assembly" }));
     expect(screen.getByRole("textbox", { name: "Generated assembly" })).toHaveAttribute("readonly");
     expect(screen.getByText(/assembly below is incomplete/)).toBeVisible();
+    await user.keyboard("{Escape}");
     let finish!: (value: Response) => void;
     fetchMock.mockImplementationOnce(
       () =>
@@ -275,7 +275,7 @@ describe("playground interactions", () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(screen.getByRole("button", { name: "Running…" })).toBeDisabled();
-    expect(screen.getByRole("tab", { name: "Output" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getAllByRole("article")).toHaveLength(2);
     expect(screen.getByText("hello result")).toBeVisible();
     expect(screen.queryByRole("textbox", { name: "Generated assembly" })).not.toBeInTheDocument();
     await act(async () => {
@@ -325,10 +325,10 @@ describe("playground interactions", () => {
     mount();
     await user.click(screen.getByRole("button", { name: "Run" }));
     expect(await screen.findByText(label, { exact: true })).toBeVisible();
-    expect(screen.getByText(detail)).toBeVisible();
+    expect(screen.getAllByText(detail, { exact: false })[0]).toBeVisible();
   });
 
-  it("retains the source editor across narrow tabs and switches to Result on Run", async () => {
+  it("retains the source editor across narrow tabs and switches to Console on Run", async () => {
     matchMediaMock.mockImplementation((query: string) => ({
       matches: query === "(max-width: 1080px)",
       media: query,
@@ -344,14 +344,14 @@ describe("playground interactions", () => {
     mount("default");
     const editor = source();
     fireEvent.change(editor, { target: { value: "edited source" } });
-    await user.click(screen.getByRole("tab", { name: "Result" }));
+    await user.click(screen.getByRole("tab", { name: "Console" }));
     expect(editor).toBeInTheDocument();
     expect(editorDisposed).not.toHaveBeenCalledWith("Source code");
     await user.click(screen.getByRole("tab", { name: "Code" }));
     expect(source()).toBe(editor);
     expect(source()).toHaveValue("edited source");
     await user.click(screen.getByRole("button", { name: "Run" }));
-    expect(screen.getByRole("tab", { name: "Result" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Console" })).toHaveAttribute("aria-selected", "true");
     expect(await screen.findByText("hello result")).toBeVisible();
   });
 
@@ -372,15 +372,20 @@ describe("playground interactions", () => {
       finish(response(result));
       await Promise.resolve();
     });
-    await user.click(screen.getByRole("tab", { name: "Assembly" }));
+    await user.click(screen.getByRole("button", { name: "View assembly" }));
     expect(screen.getByRole("textbox", { name: "Generated assembly" })).toHaveAttribute(
       "data-target",
       "rv64",
     );
 
+    await user.keyboard("{Escape}");
     await user.click(screen.getByRole("button", { name: "Run" }));
-    await screen.findByText("hello result");
-    await user.click(screen.getByRole("tab", { name: "Assembly" }));
+    await screen.findByRole("article", { name: "Run #2" });
+    await user.click(
+      within(screen.getByRole("article", { name: "Run #2" })).getByRole("button", {
+        name: "View assembly",
+      }),
+    );
     expect(screen.getByRole("textbox", { name: "Generated assembly" })).toHaveAttribute(
       "data-target",
       "aarch64",
@@ -427,32 +432,27 @@ describe("playground interactions", () => {
     mounted.unmount();
   });
 
-  it("hides Run with the results sidebar and retains the editors and selected result tab", async () => {
+  it("hides Run with the results sidebar and preserves console folding", async () => {
     const user = userEvent.setup();
     mount();
     const editor = source();
     await user.click(screen.getByRole("button", { name: "Run" }));
     await screen.findByText("hello result");
-    await user.click(screen.getByRole("tab", { name: "Assembly" }));
-    const assembly = screen.getByRole("textbox", { name: "Generated assembly" });
-    assembly.scrollTop = 120;
-    expect(
-      screen.getByRole("button", { name: "Collapse results" }).querySelector(".sidebar__label"),
-    ).toBeNull();
+    const record = screen.getByRole("article", { name: "Run #1" });
+    const header = within(record).getByRole("button", { expanded: true });
+    await user.click(header);
     await user.click(screen.getByRole("button", { name: "Collapse results" }));
     expect(screen.queryByRole("button", { name: "Run" })).toBeNull();
-    expect(screen.queryByRole("tablist", { name: "Results" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Console for hello.c" })).toBeNull();
     const expandResults = screen.getByRole("button", { name: "Expand results" });
     expect(expandResults).toHaveAttribute("aria-expanded", "false");
-    expect(expandResults.querySelector(".sidebar__label")).toBeNull();
-    expect(assembly).toBeInTheDocument();
+    expect(record).toBeInTheDocument();
     expect(source()).toBe(editor);
     expect(editorDisposed).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "Expand results" }));
+    await user.click(expandResults);
     expect(screen.getByRole("button", { name: "Run" })).toBeVisible();
-    expect(screen.getByRole("tab", { name: "Assembly" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("textbox", { name: "Generated assembly" })).toBe(assembly);
-    expect(assembly.scrollTop).toBe(120);
+    expect(header).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("hello result")).not.toBeVisible();
   });
 
   it("keeps the results sidebar closed across files, reloads, and execution completion", async () => {
@@ -515,7 +515,7 @@ describe("playground interactions", () => {
     await user.click(within(dialog).getByRole("button", { name: "New file" }));
     expect(source()).toHaveValue(getSample("asm", "aarch64"));
     expect(screen.queryByRole("combobox", { name: "Target" })).not.toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Assembly" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "View assembly" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Actions for startup.s" }));
     await user.click(screen.getByRole("menuitem", { name: "Rename" }));
     dialog = screen.getByRole("dialog", { name: "Rename file" });
@@ -606,9 +606,9 @@ describe("playground interactions", () => {
     await user.click(screen.getByRole("button", { name: "first.c" }));
     expect(screen.getByText("hello result")).toBeVisible();
     fireEvent.change(source(), { target: { value: "changed" } });
-    expect(screen.getByText(/Out of date/)).toBeVisible();
+    expect(screen.getByText(/Inputs changed since this run/)).toBeVisible();
     fireEvent.change(source(), { target: { value: "first source" } });
-    expect(screen.queryByText(/Out of date/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Inputs changed since this run/)).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "other.c" }));
     mounted.unmount();
     mount();

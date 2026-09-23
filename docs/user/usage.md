@@ -1,9 +1,10 @@
 # Using the playground
 
 Create a C or assembly file, choose its target (RV64 or AArch64), edit the source, and select
-**Run**. The Output tab shows program output and exit status; Build shows compiler
-output. For C input, Assembly displays generated assembly for that Run's target.
-You can select, copy, search, and scroll generated assembly, but cannot edit it.
+**Run**. The Console shows compiler diagnostics, stdout, stderr, and the final outcome
+for each execution. **View assembly** opens generated C assembly for that execution's
+captured target. Historical source and assembly support selection, copying, and search,
+but cannot be edited.
 
 ## Editor keyboard controls
 
@@ -59,7 +60,8 @@ file. **Download** saves one file's code without its execution settings.
 On wide screens, **Run** is in the results-sidebar header. This sidebar starts open at
 400px and can be resized down to 320px. **Collapse results** hides it, including Run;
 **Expand results** on the remaining icon rail restores it. Its width and open/closed state
-are saved for all files in this browser. Closing it preserves results and the selected tab.
+are saved for all files in this browser. Closing it preserves run history, folding, and
+Console scroll position.
 
 The two sidebar widths are independent: resizing one adjusts the editor while keeping the
 other fixed. Each divider stops before the editor becomes narrower than 320px. You can
@@ -68,24 +70,49 @@ sidebar's minimum/maximum width. If the window becomes too small, the sidebars t
 shrink; widening the window restores your preferred widths.
 
 On narrow screens, **Run** stays
-beside the **Code / Result** tabs and switches to Result when pressed. The file
+beside the **Code / Console** tabs and switches to Console when pressed. Selecting a file returns
+to Code; reopening Console restores that file's reading position. The file
 sidebar becomes a drawer opened from the button to the left of these tabs. It overlays
 the editor without shrinking it. Select a file, create or import a program, press Escape,
 or click the background or **Close sidebar** to close it. Your desktop sidebar preferences
-is preserved when returning to a wider window.
+are preserved when returning to a wider window.
 
 Only one program can run at a time. You can edit or switch files while it runs;
 the result always belongs to the file that started it, and completion does not
 switch you away from your current file.
 
-Each file retains its last result during this page session. Editing its code or
-settings marks that result **Out of date**. The last-run architecture and
-**Run settings** identify what produced the output. Re-running keeps the previous
-output visible with a notice until the new result arrives. A failed request shows
-its error and retains previous output. Reloading clears all results.
+Each file retains its latest 20 runs during this page session, oldest first. A new record
+appears as soon as Run starts, then receives its output or request-failure reason. Earlier
+runs stay intact. The twenty-first run removes the oldest record for that file. Reloading,
+deleting a file, or closing its temporary preview discards its history.
 
-Closing the Assembly result tab discards that viewer's state; opening it again
-starts at the beginning.
+Each run shows its number, local start time, target, and state. Expand or fold it using its
+header; folding survives file switches. Build diagnostics, stdout, and stderr appear only
+when nonempty, in that order, followed by the outcome. Output preserves whitespace and
+wraps long lines. The streams are separate groups, not a reconstruction of their original
+interleaving. Truncation is marked beside the affected section. Nonzero exits, signals,
+compile failures, compilation/execution timeouts, and request failures are distinct.
+
+Editing code or settings adds **Inputs changed since this run** to the latest run when its
+inputs differ. **Details** shows the original filename, complete start time, language,
+target, compiler options, and read-only source. **View assembly** appears only when generated
+code exists. Assembly extraction failure is reported separately from the program's outcome;
+its diagnostics appear with build output. Both viewers refer to the selected historical run,
+open as full-screen dialogs on narrow displays, and offer **Copy** and **Find** controls.
+Reopening a viewer starts at the beginning with search cleared. Closing it returns to the
+Console's preserved reading position.
+
+**Copy log** is available after a run finishes or fails. It copies the run number, full
+start time with timezone, target, labeled output, truncation notices, and final outcome;
+it excludes source and generated assembly. **Clear** asks before removing the displayed
+file's history and is unavailable while any request is running. Run numbers continue after
+Clear and reset on reload.
+
+The Console follows new output when you are already at the bottom. Otherwise it preserves
+what you are reading and offers **Jump to latest**. Jump moves to the end of the newest run,
+or its header if folded, without unfolding it. If retention removes the run you are reading,
+the Console moves to the first remaining run. A historical viewer already open remains
+readable until closed even if its run is removed by retention.
 
 ## Sharing
 

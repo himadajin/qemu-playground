@@ -98,12 +98,12 @@ describe("execution ownership", () => {
       result.current.forget(first.id);
     });
     expect(requestRun).toHaveBeenCalledTimes(1);
-    act(() => result.current.selectTab(first.id, "build"));
+    const runId = result.current.executions[first.id]!.runs[0]!.id;
+    act(() => result.current.toggle(first.id, runId));
     await flushUpdates(() => finish({ ok: false, message: "unavailable" }));
     expect(result.current.runningId).toBeNull();
     expect(result.current.executions[first.id]).toMatchObject({
-      error: "unavailable",
-      tab: "build",
+      runs: [{ phase: { kind: "failed", message: "unavailable" }, collapsed: true }],
     });
     expect(result.current.executions[second.id]).toBeUndefined();
     act(() => result.current.forget(first.id));
@@ -113,5 +113,118 @@ describe("execution ownership", () => {
       expect(result.current.run(second)).toBe(true);
     });
     expect(requestRun).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("bounded run history", () => {
+  it("appends at submission, snapshots inputs, and preserves earlier results on failure", async () => {
+    const file = createFile("c", "rv64", "original.c");
+    const original = { ...file };
+    const { result } = renderHook(useProgramExecution);
+    vi.mocked(requestRun).mockResolvedValueOnce({
+      ok: true,
+      result: {
+        status: "compile_error",
+        compileLog: "first diagnostic",
+        compileLogTruncated: false,
+      },
+    });
+    await flushUpdates(() => {
+      result.current.run(file);
+    });
+    const first = result.current.executions[file.id]!.runs[0]!;
+    let reject!: (error: Error) => void;
+    vi.mocked(requestRun).mockImplementationOnce(
+      () =>
+        new Promise((_, fail) => {
+          reject = fail;
+        }),
+    );
+    act(() => {
+      result.current.run(file);
+    });
+    expect(result.current.executions[file.id]!.runs.map((run) => run.phase.kind)).toEqual([
+      "result",
+      "running",
+    ]);
+    Object.assign(file, {
+      name: "renamed.c",
+      code: "edited",
+      target: "aarch64",
+      compileOptions: "-O3",
+    });
+    act(() => {
+      result.current.toggle(file.id, first.id);
+    });
+    await flushUpdates(() => reject(new Error("network failure")));
+    const runs = result.current.executions[file.id]!.runs;
+    expect(runs[0]).toMatchObject({ ...first, collapsed: true });
+    expect(runs[1]).toMatchObject({
+      sequence: 2,
+      fileName: original.name,
+      input: {
+        code: original.code,
+        target: original.target,
+        compileOptions: original.compileOptions,
+      },
+      phase: { kind: "failed" },
+    });
+    expect(result.current.runningId).toBeNull();
+  });
+
+  it("evicts only the oldest of 20, preserves other files, and keeps sequence after Clear", async () => {
+    const file = createFile();
+    const other = createFile();
+    const { result, unmount } = renderHook(useProgramExecution);
+    vi.mocked(requestRun).mockResolvedValue({ ok: false, message: "busy" });
+    await flushUpdates(() => {
+      result.current.run(other);
+    });
+    for (let i = 0; i < 21; i++)
+      await flushUpdates(() => {
+        result.current.run(file);
+      });
+    expect(result.current.executions[file.id]!.runs.map((run) => run.sequence)).toEqual(
+      Array.from({ length: 20 }, (_, i) => i + 2),
+    );
+    const retained = result.current.executions[other.id];
+    act(() => result.current.clear(file.id));
+    expect(result.current.executions[file.id]!.runs).toEqual([]);
+    expect(result.current.executions[other.id]).toBe(retained);
+    await flushUpdates(() => {
+      result.current.run(file);
+    });
+    expect(result.current.executions[file.id]!.runs[0]!.sequence).toBe(22);
+    result.current.scrollPositions.set(file.id, { top: 100, atBottom: false });
+    act(() => result.current.forget(file.id));
+    expect(result.current.scrollPositions.has(file.id)).toBe(false);
+    expect(result.current.executions[file.id]).toBeUndefined();
+    unmount();
+    expect(renderHook(useProgramExecution).result.current.executions).toEqual({});
+  });
+
+  it("blocks Clear for every file while any request is running", async () => {
+    const first = createFile();
+    const second = createFile();
+    const { result } = renderHook(useProgramExecution);
+    vi.mocked(requestRun).mockResolvedValueOnce({ ok: false, message: "first" });
+    await flushUpdates(() => {
+      result.current.run(first);
+    });
+    let finish!: (outcome: RunOutcome) => void;
+    vi.mocked(requestRun).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    act(() => {
+      result.current.run(second);
+      result.current.clear(first.id);
+      result.current.clear(second.id);
+    });
+    expect(result.current.executions[first.id]!.runs).toHaveLength(1);
+    expect(result.current.executions[second.id]!.runs).toHaveLength(1);
+    await flushUpdates(() => finish({ ok: false, message: "second" }));
   });
 });

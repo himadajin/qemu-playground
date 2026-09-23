@@ -1,10 +1,14 @@
-import { Alert } from "@mantine/core";
+import { Button } from "@mantine/core";
 import { getTargetDefinition } from "@qemu-playground/shared";
-import type { ReactNode } from "react";
-import { ResultPane, type ResultTab } from "./ResultPane";
-import type { Execution } from "../hooks/useProgramExecution";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { ResultPane } from "./ResultPane";
+import { RunViewer } from "./RunViewer";
+import { ConfirmDiscardDialog } from "./ConfirmDiscardDialog";
+import { type Execution, type RunRecord } from "../hooks/useProgramExecution";
+import { useConsoleScroll, type ConsolePosition } from "../hooks/useConsoleScroll";
 import { sameProgram, type ProgramFile } from "../lib/files";
-import { deriveResultView } from "../lib/runView";
+
+const EMPTY_RUNS: RunRecord[] = [];
 export function ProgramResult({
   file,
   execution,
@@ -12,7 +16,9 @@ export function ProgramResult({
   runningFile,
   colorScheme,
   runButton,
-  onTabChange,
+  scrollPositions,
+  onToggle,
+  onClear,
 }: {
   file: ProgramFile;
   execution: Execution | undefined;
@@ -20,20 +26,27 @@ export function ProgramResult({
   runningFile: ProgramFile | undefined;
   colorScheme: "light" | "dark";
   runButton: ReactNode;
-  onTabChange: (tab: ResultTab) => void;
+  scrollPositions: Map<string, ConsolePosition>;
+  onToggle: (runId: string) => void;
+  onClear: () => void;
 }) {
-  const ownRunning = runningId === file.id;
-  const view = deriveResultView(
-    execution?.result
-      ? { kind: "result", result: execution.result }
-      : ownRunning
-        ? { kind: "running" }
-        : execution?.error
-          ? { kind: "failed", message: execution.error }
-          : { kind: "idle" },
-    file.language,
+  const runs = execution?.runs ?? EMPTY_RUNS;
+  const { viewport, content, atBottom, anchorHeader, jump } = useConsoleScroll(
+    file.id,
+    runs,
+    scrollPositions,
   );
-  const stale = !!execution?.input && !sameProgram(file, execution.input);
+  const viewerOpener = useRef<HTMLButtonElement | null>(null);
+  const [clearing, setClearing] = useState(false);
+  const [viewer, setViewer] = useState<{ run: RunRecord; kind: "details" | "assembly" } | null>(
+    null,
+  );
+  useLayoutEffect(() => {
+    if (viewer || !viewerOpener.current) return;
+    const target = viewerOpener.current.isConnected ? viewerOpener.current : viewport.current;
+    target?.focus({ preventScroll: true });
+    viewerOpener.current = null;
+  }, [viewer, viewport]);
   return (
     <>
       <div className="execution-heading">
@@ -43,42 +56,73 @@ export function ProgramResult({
         </div>
         {runButton}
       </div>
-      {runningId && (
+      {runningId && runningId !== file.id && (
         <div className="execution-note" role="status">
-          {ownRunning
-            ? execution?.result
-              ? "Running… Showing output from the previous run."
-              : "Running…"
-            : `Running ${runningFile?.name ?? "another file"}…`}
+          Running {runningFile?.name ?? "another file"}…
         </div>
       )}
-      {execution?.input && (
-        <div className="execution-snapshot">
-          <span>
-            {stale ? "Out of date · " : ""}Last run:{" "}
-            {getTargetDefinition(execution.input.target).displayName}
-          </span>
-          <details>
-            <summary>Run settings</summary>
-            <div>
-              Compiler options: <code>{execution.input.compileOptions || "default"}</code>
-            </div>
-          </details>
+      <div className="console-toolbar">
+        <strong>Console</strong>
+        <Button
+          variant="subtle"
+          color="gray"
+          size="compact-xs"
+          disabled={!runs.length || runningId !== null}
+          onClick={() => setClearing(true)}
+        >
+          Clear
+        </Button>
+      </div>
+      <div
+        className="console-scroll"
+        ref={viewport}
+        tabIndex={0}
+        role="region"
+        aria-label={`Console for ${file.name}`}
+      >
+        <div ref={content}>
+          {runs.map((run, index) => (
+            <ResultPane
+              key={run.id}
+              run={run}
+              stale={index === runs.length - 1 && !sameProgram(file, run.input)}
+              onToggle={(element) => {
+                anchorHeader(element);
+                onToggle(run.id);
+              }}
+              onView={(kind, opener) => {
+                viewerOpener.current = opener;
+                setViewer({ run, kind });
+              }}
+            />
+          ))}
+        </div>
+      </div>
+      {!atBottom && runs.length > 0 && (
+        <div className="console-jump">
+          <Button size="compact-xs" variant="light" onClick={jump}>
+            Jump to latest
+          </Button>
         </div>
       )}
-      {execution?.error && execution.result && (
-        <Alert color="red" variant="light" p="xs">
-          {execution.error} Showing output from the previous run.
-        </Alert>
+      <ConfirmDiscardDialog
+        opened={clearing}
+        title="Clear console"
+        cancelLabel="Cancel"
+        confirmLabel="Clear history"
+        disabled={runningId !== null || !runs.length}
+        onClose={() => setClearing(false)}
+        onConfirm={() => {
+          onClear();
+          setClearing(false);
+        }}
+      >
+        Clear {runs.length} {runs.length === 1 ? "run" : "runs"} for “{file.name}”? Other files are
+        unaffected. This cannot be undone.
+      </ConfirmDiscardDialog>
+      {viewer && (
+        <RunViewer {...viewer} colorScheme={colorScheme} onClose={() => setViewer(null)} />
       )}
-      <ResultPane
-        view={ownRunning ? { ...view, badge: "running" } : view}
-        tab={execution?.tab ?? "output"}
-        onTabChange={onTabChange}
-        language={file.language}
-        target={execution?.input?.target ?? file.target}
-        colorScheme={colorScheme}
-      />
     </>
   );
 }

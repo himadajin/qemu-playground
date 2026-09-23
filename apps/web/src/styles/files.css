@@ -116,26 +116,11 @@
 .execution-heading__context span {
   color: var(--mantine-color-dimmed);
 }
-.execution-note,
-.execution-snapshot {
+.execution-note {
   font-size: 11px;
   padding: 7px 12px;
   color: var(--mantine-color-dimmed);
   border-bottom: 1px solid var(--mantine-color-default-border);
-}
-.execution-snapshot {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.execution-snapshot details {
-  margin-left: auto;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-}
-.execution-snapshot summary {
-  cursor: pointer;
 }
 .preview-banner {
   display: flex;

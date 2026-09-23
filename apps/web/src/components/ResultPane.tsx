@@ -1,147 +1,118 @@
-import type { Language, TargetId } from "@qemu-playground/shared";
-import { Badge, Tabs, Text } from "@mantine/core";
-import type { ResultView } from "../lib/runView";
-import type { EditorColorScheme } from "../editor/theme";
-import { LazyCodeEditor } from "./LazyCodeEditor";
+import { Badge, Button, Group, Text } from "@mantine/core";
+import { getTargetDefinition } from "@qemu-playground/shared";
+import type { RunRecord } from "../hooks/useProgramExecution";
+import { copyRunLog, fullRunTime, runOutcome, shortRunTime } from "../lib/runLog";
+import { deriveResultView } from "../lib/runView";
+import { CopyButton } from "./CopyButton";
 import { StatusBadge } from "./StatusBadge";
 
-export type ResultTab = "output" | "build" | "assembly";
-
-interface ResultPaneProps {
-  view: ResultView;
-  tab: ResultTab;
-  onTabChange: (tab: ResultTab) => void;
-  language: Language;
-  target: TargetId;
-  colorScheme: EditorColorScheme;
-}
-
-interface LogSectionProps {
+function LogSection({
+  title,
+  text,
+  truncated,
+}: {
   title: string;
   text: string | null;
-  truncated?: boolean;
-  placeholder: string;
-}
-
-function LogSection({ title, text, truncated, placeholder }: LogSectionProps) {
-  const empty = text === null || text === "";
+  truncated: boolean;
+}) {
+  if (!text) return null;
   return (
-    <section className="log-section">
+    <section className="log-section" aria-label={title}>
       <header className="log-section__head">
         <Text size="xs" c="dimmed">
           {title}
         </Text>
-        {truncated === true && (
+        {truncated && (
           <Badge size="xs" color="orange" variant="light">
             truncated
           </Badge>
         )}
       </header>
-      {empty ? (
-        <p className="log-section__placeholder">{placeholder}</p>
-      ) : (
-        <pre className="log">{text}</pre>
-      )}
+      <pre className="log">{text}</pre>
     </section>
   );
 }
 
-/**
- * Right-hand pane: one tab per kind of output, with the short status badge in
- * the header. Detail is always the raw log, never a rephrased summary.
- */
 export function ResultPane({
-  view,
-  tab,
-  onTabChange,
-  language,
-  target,
-  colorScheme,
-}: ResultPaneProps) {
+  run,
+  stale,
+  onToggle,
+  onView,
+}: {
+  run: RunRecord;
+  stale: boolean;
+  onToggle: (element: HTMLElement) => void;
+  onView: (kind: "details" | "assembly", opener: HTMLButtonElement) => void;
+}) {
+  const view = deriveResultView(run.phase, run.input.language);
   const { output, build, assembly } = view;
-
+  const extractionFailed =
+    run.input.language === "c" &&
+    run.phase.kind === "result" &&
+    "assembly" in run.phase.result &&
+    run.phase.result.assembly?.available &&
+    run.phase.result.assembly.code === "";
   return (
-    <Tabs
-      className="result"
-      value={tab}
-      onChange={(value) => {
-        if (value !== null) onTabChange(value as ResultTab);
-      }}
-      keepMounted={false}
-    >
-      <div className="result__head">
-        <Tabs.List className="result__tabs" aria-label="Results">
-          <Tabs.Tab value="output">Output</Tabs.Tab>
-          <Tabs.Tab value="build">Build</Tabs.Tab>
-          <Tabs.Tab value="assembly" disabled={language === "asm"}>
-            Assembly
-          </Tabs.Tab>
-        </Tabs.List>
-        <span role="status" aria-live="polite">
-          {view.badge !== null && <StatusBadge kind={view.badge} />}
+    <article className="console-run" data-run-id={run.id} aria-label={`Run #${run.sequence}`}>
+      <button
+        className="console-run__head"
+        aria-expanded={!run.collapsed}
+        aria-controls={`run-${run.id}`}
+        onClick={(event) => onToggle(event.currentTarget.parentElement!)}
+      >
+        <span aria-hidden="true" className="console-run__chevron">
+          {run.collapsed ? "▸" : "▾"}
         </span>
+        <span className="console-run__number">#{run.sequence}</span>
+        <time dateTime={new Date(run.startedAt).toISOString()} title={fullRunTime(run.startedAt)}>
+          {shortRunTime(run.startedAt)}
+        </time>
+        <span>{getTargetDefinition(run.input.target).displayName}</span>
+        <span className="console-run__status">
+          {view.badge && <StatusBadge kind={view.badge} />}
+          {output.exit && view.badge !== "success" && <span>{output.exit}</span>}
+          {run.phase.kind === "result" && run.phase.result.status === "timeout" && (
+            <span>{run.phase.result.timeoutPhase}</span>
+          )}
+        </span>
+      </button>
+      {stale && <p className="console-run__note">Inputs changed since this run</p>}
+      <div id={`run-${run.id}`} hidden={run.collapsed}>
+        <Group gap="xs" className="console-run__actions">
+          <Button
+            variant="subtle"
+            size="compact-xs"
+            onClick={(event) => onView("details", event.currentTarget)}
+          >
+            Details
+          </Button>
+          <CopyButton
+            label="Copy log"
+            text={() => copyRunLog(run)}
+            disabled={run.phase.kind === "running"}
+          />
+          {assembly.kind === "code" && (
+            <Button
+              variant="subtle"
+              size="compact-xs"
+              onClick={(event) => onView("assembly", event.currentTarget)}
+            >
+              View assembly
+            </Button>
+          )}
+        </Group>
+        <LogSection title="Build diagnostics" text={build.log} truncated={build.truncated} />
+        <LogSection title="stdout" text={output.stdout} truncated={output.stdoutTruncated} />
+        <LogSection title="stderr" text={output.stderr} truncated={output.stderrTruncated} />
+        {extractionFailed && (
+          <p className="console-run__note">
+            Assembly extraction failed. See the build diagnostics above.
+          </p>
+        )}
+        <p className="console-run__outcome" role="status">
+          {runOutcome(view)}
+        </p>
       </div>
-
-      <Tabs.Panel className="result__panel" value="output">
-        <div className="result__state">
-          <span>{output.state}</span>
-          {output.exit !== null && <span className="result__exit">{output.exit}</span>}
-        </div>
-        {output.log.length > 0 && (
-          <LogSection title="log" text={output.log.join("\n")} placeholder="" />
-        )}
-        <LogSection
-          title="stdout"
-          text={output.stdout}
-          truncated={output.stdoutTruncated}
-          placeholder={
-            output.stdout === null
-              ? "The program did not run."
-              : "The program wrote nothing to stdout."
-          }
-        />
-        <LogSection
-          title="stderr"
-          text={output.stderr}
-          truncated={output.stderrTruncated}
-          placeholder={
-            output.stderr === null
-              ? "The program did not run."
-              : "The program wrote nothing to stderr."
-          }
-        />
-      </Tabs.Panel>
-
-      <Tabs.Panel className="result__panel" value="build">
-        <LogSection
-          title="compiler output"
-          text={build.log}
-          truncated={build.truncated}
-          placeholder={build.placeholder ?? ""}
-        />
-      </Tabs.Panel>
-
-      <Tabs.Panel className="result__panel result__panel--flush" value="assembly">
-        {assembly.kind === "code" ? (
-          <div className="assembly">
-            {assembly.truncated && (
-              <p className="assembly__flag">Output truncated; the assembly below is incomplete.</p>
-            )}
-            <div className="assembly__editor">
-              <LazyCodeEditor
-                value={assembly.code}
-                language="asm"
-                target={target}
-                colorScheme={colorScheme}
-                readOnly
-                ariaLabel="Generated assembly"
-              />
-            </div>
-          </div>
-        ) : (
-          <p className="log-section__placeholder">{assembly.message}</p>
-        )}
-      </Tabs.Panel>
-    </Tabs>
+    </article>
   );
 }

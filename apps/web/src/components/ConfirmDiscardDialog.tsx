@@ -23,7 +23,7 @@ export function ConfirmDiscardDialog({
     <Modal opened={opened} onClose={onClose} title={title} centered size="sm">
       <Text size="sm">{children}</Text>
       <Group justify="flex-end" mt="md">
-        <Button variant="default" onClick={onClose}>
+        <Button data-autofocus variant="default" onClick={onClose}>
           {cancelLabel}
         </Button>
         <Button color="red" disabled={disabled} onClick={onConfirm}>
