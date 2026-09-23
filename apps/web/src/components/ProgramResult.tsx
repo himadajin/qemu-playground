@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ResultPane } from "./ResultPane";
 import { RunViewer } from "./RunViewer";
 import { ConfirmDiscardDialog } from "./ConfirmDiscardDialog";
-import { RUN_HISTORY_LIMIT, type Execution, type RunRecord } from "../hooks/useProgramExecution";
+import { type Execution, type RunRecord } from "../hooks/useProgramExecution";
 import { useConsoleScroll, type ConsolePosition } from "../hooks/useConsoleScroll";
 import { sameProgram, type ProgramFile } from "../lib/files";
 
@@ -73,9 +73,6 @@ export function ProgramResult({
           Clear
         </Button>
       </div>
-      <p className="console-retention">
-        Latest {RUN_HISTORY_LIMIT} runs per file · Cleared on reload
-      </p>
       <div
         className="console-scroll"
         ref={viewport}
@@ -84,7 +81,6 @@ export function ProgramResult({
         aria-label={`Console for ${file.name}`}
       >
         <div ref={content}>
-          {runs.length === 0 && <p className="console-empty">Run this file to see output here.</p>}
           {runs.map((run, index) => (
             <ResultPane
               key={run.id}

@@ -98,10 +98,9 @@ A single-screen playground for entering code, running it, and inspecting results
   operated header. Evicting the visible run moves to the first remaining run. Jump to latest moves
   to the latest run's end, or its folded header, without changing fold state. Console position
   survives file switches, hidden tabs/sidebar, and closing viewers.
-- The toolbar discloses the 20-run per-file limit and reload clearing. Empty Console says
-  `Run this file to see output here.` Clear is disabled when empty or while any request is running.
-  Its confirmation names the file and record count, explains other files are unaffected, and
-  initially focuses Cancel. Clearing preserves the next sequence number.
+- An empty Console has no placeholder text. Clear is disabled when empty or while any request is
+  running. Its confirmation names the file and record count, explains other files are unaffected,
+  and initially focuses Cancel. Clearing preserves the next sequence number.
 - Copy log is enabled on completed or failed records. It copies number, full start time, target,
   labeled nonempty diagnostics/stdout/stderr, truncation notices, and outcome, but never source or
   generated assembly. Copy success/failure is announced beside the control.

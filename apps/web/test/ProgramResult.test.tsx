@@ -153,7 +153,9 @@ describe("Console records and viewers", () => {
     expect(screen.getByRole("article")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Clear" }));
     await user.click(screen.getByRole("button", { name: "Clear history" }));
-    expect(screen.getByText("Run this file to see output here.")).toBeVisible();
+    const emptyConsole = screen.getByRole("region", { name: "Console for renamed.c" });
+    expect(within(emptyConsole).queryByRole("article")).toBeNull();
+    expect(screen.queryByText("Run this file to see output here.")).toBeNull();
     expect(screen.getByRole("button", { name: "Clear" })).toBeDisabled();
     mounted.unmount();
     render(<Harness runningId="other-file" />);

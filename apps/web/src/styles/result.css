@@ -5,19 +5,11 @@
   padding: 8px 12px 0;
   font-size: var(--mantine-font-size-sm);
 }
-.console-retention,
-.console-empty,
 .console-run__note {
   margin: 0;
   padding: 6px 12px;
   color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-xs);
-}
-.console-retention {
-  border-bottom: 1px solid var(--mantine-color-default-border);
-}
-.console-empty {
-  padding-top: 24px;
 }
 .console-scroll {
   flex: 1 1 auto;
